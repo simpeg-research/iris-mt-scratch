@@ -1,0 +1,13 @@
+95/01/30	Doug Neuhauser, doug@seismo.berkeley.edu
+
+For an up-to-date leapsecond file, see pub/tz* in the FTP site
+elsie.nci.nih.gov, in the file `leapseconds'.
+
+The qlib time routines REQUIRE a leapseconds file in order to 
+compute time correctly across leapsecond boundaries.
+
+The default place the libries look for the file "leapseconds" is:
+	/usr/local/lib/leapseconds
+This can be overridden in the Makefile, or at runtime by setting
+the environment variable LEAPSECONDS:
+	setenv LEAPSECONDS	path_of_leapseconds_file

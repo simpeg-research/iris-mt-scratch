@@ -1,0 +1,74 @@
+fids = [];start_decs = []; chid = []; nch = [];orient = [];
+
+%  open FC files, read headers
+for ista = 1:nsta
+  fprintf(1,'%s %s \n','File ',cfile(ista,1:nchar(ista)))
+  [nd,nf,nch1,chid1,orient1,drs,stdec,decs,fid,start_dec] ...
+                    = fc_open(cfile(ista,1:nchar(ista)));
+  if (fid < 0 ) 
+     fprintf(1,'%s \n','File not found');
+     break ; 
+  end
+  
+  fids = [ fids fid ];
+  start_decs = [start_decs ; start_dec ] ;
+  chid = [ chid ;  chid1 ];
+  nch = [nch  nch1 ];
+  orient = [orient orient1(1,:) ];
+end
+  
+if(fid > 0 )
+%   set up array of pointers to start of each frequency in each FC file
+[start_freqs] = mk_start_freqs(id,fids,nf,nch,start_decs);
+
+%   find set numbers available for all sites
+[isets,isets_pt] =  mk_isets(fids,start_decs,nch,nf,id);
+
+%   compute average Hx, Hy, Ex, Ey , residual, etc. power averaged over
+%   time window defined by navg 
+%   currently doesn't work with navg = 1 (because of the way "sum" works)
+   nsets = length(isets);
+   ntime = fix(nsets/navg);
+   N = navg*ntime;
+   Hx_power = zeros(nbands,ntime);
+   Hy_power = zeros(nbands,ntime);
+   Hxy_cross = Hy_power;
+   Ex_power = Hy_power;
+   Ey_power = Hy_power;
+   Ex_res = Hy_power;
+   Ey_res = Hy_power;
+%  time expressed in days (1 Jan 0:00 UT = 1.0 )
+   time = 1 + drs(id)*(isets(1:navg:N)+navg/2)*96/86400;
+
+% loop over bands ...
+for kb = 1:nbands
+   [fc] = fc_get(fids,start_freqs,nch,isets_pt,id,iband(:,kb));
+   comp = [1 ]; nc = 1;
+   temp1 = reshape(fc(comp,1:N),nc*navg,ntime);
+   Hx_power(kb,:) = sum(temp1 .* conj(temp1) );
+   comp = [2 ]; nc = 1;
+   temp2 = reshape(fc(comp,1:N),nc*navg,ntime);
+   Hy_power(kb,:) = sum(temp2 .* conj(temp2) );
+   comp = [4]; nc = 1;
+   temp1 = reshape(fc(comp,1:N),nc*navg,ntime);
+   Ex_power(kb,:) = sum(temp1 .* conj(temp1) );
+   comp = [5 ]; nc = 1;
+   temp2 = reshape(fc(comp,1:N),nc*navg,ntime);
+   Ey_power(kb,:) = sum(temp2 .* conj(temp2) );
+
+%  residuals at PKD ... for now just using Hx, Hy at PKD for the prediction
+%  of Ex, Ey ...
+   icomp_in = [1:2];
+   U = [U1(kb,:).' U2(kb,:).' ];
+   P = mk_P(U,SIGMA_N(kb,:)',icomp_in);
+   comp = 4;
+   temp1 = reshape(fc(comp,1:N)-P(comp,:)*fc(icomp_in,1:N),nc*navg,ntime);
+   Ex_res(kb,:) = sum(temp1.*conj(temp1) );
+   comp = 5;
+   temp1 = reshape(fc(comp,1:N)-P(comp,:)*fc(icomp_in,1:N),nc*navg,ntime);
+   Ey_res(kb,:) = sum(temp1.*conj(temp1) );
+end    
+end
+for ista = 1:nsta
+  fclose(fids(ista));
+end

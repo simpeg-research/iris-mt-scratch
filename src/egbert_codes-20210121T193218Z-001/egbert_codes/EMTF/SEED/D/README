@@ -1,0 +1,43 @@
+This directory conatins code to modify the FFT program dnff
+to allow for direct reading of mini-seed files:
+
+MAKE DNFF_SEED FROM HERE.  
+
+This requires the following:
+
+(1) Source codes for most of the dnff subroutines, which should
+be in subdirectory D ... note that a link to ../../D is in
+this directory, so if you install the parent directory SEED
+alongside your old dnff directory D, everything should be found.
+
+(2)  Source codes for reading the actual mini-seed files, 
+in ../SEED_ASC .  These are the same routines used for input
+in the seed-to-ascii translating program.
+
+(3)  Libraries fiolib and qlib.  Correct paths to these
+need to be set in the Makefile .  Source code for these libraries
+are in SEED/fiolib and SEED/qlib  .   NOTE: these libraries were
+obtained from the Berkeley Seismological Laboratory.  They use
+a lot of very non-standard fortran (e.g., data structures, built
+in date/time functions).  This compiles on a sun running solaris,
+(after some changes ... at first it would only work with sunos).
+It never worked on an IBM running aix.  Other versions which work
+on different platforms might be available from the Seismological Lab.
+But I can't promise that these will work properly with dnff_seed.
+
+
+
+TO RUN USE THE COMMAND LINE ARGUMENT 
+
+       dnff_seed -scf_station
+
+where "cf_station" is the name of a file containing # of channels,
+and file names for each channel.  See documentation in SEED_ASC for
+details on the form of this file ... the same format is required here.
+But note that for dnff_seed you do need the system paramter file 
+(described in documentation for dnff).  This needs to be set up just
+once for each station (as long as the instruments, gains, etc. remain
+unchanged).
+
+Note: with the -s<cf_station>  option only one run can be done at a time (in 
+contradiction to the general documentation for dnff).

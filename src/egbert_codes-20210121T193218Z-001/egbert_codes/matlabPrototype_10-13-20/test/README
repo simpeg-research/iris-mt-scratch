@@ -1,0 +1,34 @@
+This directory contains some driver/test scripts, plus example data files, input control files, and some very simple matlab functions for creating the control files.
+
+Driver/test scripts
+
+--> makeTStestFile.m, makeSynTSfiles.m    :   these were used to create TS files,from, respectively, NIMS binary files and the ascii synthetic data test files that are provided with EMTF.  To test (in a minimal way) the blocking feature, one use of the makeTStestFile.m script is to load two runs into a single TS object, with two blocks.   A test on a Phoenix "burst sampling" file will be provided soon.
+
+--> FTtest.m  : test script for FT directory: this has examples of loading one or more TS files, to create an FC file, which is stored as a mat file (huge, due to something matlab does that I do not understand!)   There are examples of running this on TS files with one and two blocks, for NIMS data and for the synthetic data.
+
+--> MTTFdriver.m   test script for TF directory : this has examples of single site and remote reference processing, and plots apparent resistivity and phase using a crude implementation of a result plotting class (whacked out quickly from other existing pieces of matlab code).
+
+All of the scripts represent examples of using and testing the base codes.  They do not represent a suggestion for finished driver programs, which should ultimately have a more substantial and easyy to access user interface.   Note also that:   
+
+The TS classes are intended as an example implementation; in detail the final code should probably make better use of MTH5 and Metadata standards.  Note also that for completeness when I create a TS object it contains already system response tables -- but in tests these are trivial, essentially  just frequency independent scaling factors for each channel.   Getting actual system response tables into the TS object (perhaps accessing standard metadata structure) certainly should be a component of the final product.
+
+The FTtest driver loads decimation and windowing information; as a starting point I just used files that were developed for EMTF (or matlab variants), and used to load these paraameters, whih are then stored in objects I suggest for the new code implementation.  There are many possible variants on sets of parameters;  I suggest focusing on XXXX (current set up on FTtest) for basic MT processing.  The idea is to have a general code that can be configured in different ways, for possibly differnt processing strategies that might be developed.   In particular, I envision using this in a way that allows easily going back and forth between time and frequency.  This requires a particular configuration of th windowing and decimation, which may be suboptimal (without further defelopments) for the standard approaches that should be implemented first .   Also, the details of the FT can be changed ...
+
+The MTTFtest program implements a specific sequence of steps for processing (weighting to reduce leverage (EDFweights), followed by regression M-estimate.  There are control parameters that can be changed; things are set now to emulate EMTF.   I envision adding additional automatic weighting functions, which might be insserted into the processing steps.  Also, there are variants on the M-estimate, which could eaisly be replaced in the loop over frequencies.   
+
+Directories:
+
+CFG : control files -- decset*.mat are input files controlling windowing and decimation.   These are used in the example FTtest.   There are also some files ch control the transfer function estimation (frequency band contorl, which files to compute estimates for).
+
+MT : place to put output files (so far just stored as mat files!)
+
+SYS : direectory for channel response files; these are trivial "place-keepers" at present, but should be sufficient for initial testing (but as noted above, need to develop a way to get channel response tables from standard metadata)
+
+STF :   I use *.stf to store the Fourier Coefficient arrays cratead by the FT tep.  These are just mat files, and for some reason (clearly related to details in the OO implemantation in matlab, or at least the way I am using it) these are HUGE -- absolutely much larger than needed to store the arrays of FCs.  These stf files are saved in this sub-directory.
+
+Original:  some Nims bin files used for making example TWS objects used in testing.
+
+TS:  The TS objects (created from Nims bin files) are stored as mat files here.   Note that each file contains a sigle TTS object, always named tsObj.
+
+SyntheticTests :  files for the synthetic tests are here.
+

@@ -1,0 +1,25 @@
+96/04/17	doug@seismo.berkeley.edu
+	ms_utils.c
+	unpack.c
+		Added support for INT_32 and INT_16 data types.
+	All .h files:
+		Added conditional compilation in headers for C++.
+
+96/02/02	doug@seismo.berkeley.edu
+	sdr_utils.c
+		Error return from decode_hdr_sdr if error reading blockettes.
+		Error return from read_blockettes instead of exit on error.
+	ms_utils.c
+		Fatal error trap if last blockette has unknown length and not
+		data in block.  Required for processing packed miniSEED 
+		records that may not have any data, and the blocksize is not
+		specified in the blockette 1000 properly.
+
+95/12/06	doug@seismo.berkeley.edu
+	Changed ms_utils.c to allow padding between blockettes.
+
+95/12/02	doug@seismo.berkeley.edu
+	Changed ms_utils.c, qda_utils.c, sdr_utils.c to trim blanks from
+	station, network, channel, and location fields when populating 
+	data_hdr structure.  Added diag code to xwrite in qutils.c
+	Added CHANGES* into tar section of Makefile.

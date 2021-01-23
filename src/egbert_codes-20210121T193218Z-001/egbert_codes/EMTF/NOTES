@@ -1,0 +1,185 @@
+1)  You should look over the documentation ... see doc/PDF
+EMTF_doc is the main document.  It is a bit old, but so are 
+the programs!  (But I have replaced source code with slightly
+newer versions; documentation has not been modified, but a few
+things have been changed).
+I am adding some notes here based on what I did to go through and
+test everything.  These also provide a summary overview.
+
+2)  To do basic single site or remote reference processing you
+basically need two programs: D/dnff and T/tranmt.   The first
+takes time series and system response information, and creates
+a "Fourier Coefficient File" containing FCs for a sequence of
+time windows, with all corrections for system parameters applied.
+(I.e., magnetic field FCs have units of nT/sqrt(hz) and electric
+field FCs have units of mv/km/sqrt(hz)).  A cascade decimation 
+scheme is used, so that very short time segments are fourier transformed,
+with longer time windows (of decimated data) used to get to lower
+frquencies.   The input time series, and the output FC files are
+"multiplexed" with all channels from a single site (i.e., 4 or 5
+for MT) in a single file.   The second program T/tranmtlr uses FC files from
+one or two sites to compute single station or remote reference
+TF estimates.   Multiple FC files for one site (i.e., several "runs")
+can be input.   Since data for the local and remote sites are provided
+in separate files, all FC files have to be constructed with a common
+time base ("clock zero" is the term used, reflecting the way these
+programs were originally used, with clocks that were "reset" to zero).
+This allows dnff to make sure that time windows for all sites
+can be aligned.   The multiple station program works the same way,
+using input FC files from two or more stations (also produced by dnff).
+This is included as well, but isn't needed for SS and RR processing.
+
+There are "control files" (*.cfg) used to control
+the window lengths, decimation, processing bands for tranmt, and
+various options.  These are all described in the documentation,
+and examples are provided in test/CF.  
+
+3)  There are makefiles provided in source code directories D and T.
+At present these are set up to  install the compiled binary source code
+in a directory defined by the environment variable MTbin.   You will need
+to change this at least -- e.g., just change the definition of BIN_DIR
+at the start of the makefiles.
+
+4)  It is also possible that you will need to add new capabilities
+for system response corrections.  Probably best to look over the 
+documentation, and contact me with questions.   For example, the code
+supports EMI system response table look up files, but this required
+adding some options to the system response routines, and adding subroutines
+for reading the EMI files.
+
+5)  With regard to time series format, some simple basic formats are supported,
+as well as some other specific formats (NIMS, EMI MT24).  It would not be
+hard to add others, but to start it is probably simples to reformat into
+a simple supported form.   One thing that might be a bit of a nuisance:
+I assume that inputs are INTEGERS (thats what is output by an A-D!)  If
+your instruments convert to more physical units with a floating point
+representation already (this was not
+done in the distant past when these programs were written!) they will need
+to be converted back to integers, obviously in a way that doesn't degrade
+precision!   For example, if mags are in nT multiply by 100 (long period)
+or 100000 or more (higher frequency) before rounding.  Then the multiplying
+factor has to be accounted for in the system response.  It would be
+a major change to convert the program to floating point inputs.  
+Should be done, but not now.
+
+6) Here's what I did to test, using the synthetic data files in directory
+test.   
+
+--> set BIN_DIR in Makefiles (D, T) to test/bin; make dnff and tranmtlr
+     (check to see that these are in the bin directory)
+
+--> there are some simple ascii data files (synthetic, 5 channel, 100 ohm-m
+half space) in test/DATA.  These are called test1.asc, test2.asc.   There
+are also files called test1.clk test2.clk which provide information about time
+(note that the files themselves just have 5 numbers per line: Hx, Hy, Hz, Ex, Ey
+for each sample).    The three lines in the "clock" file are: sample rate
+in seconds (not Hz), time of the first sample (year, month, day, hour, min, 
+second ...  these are also integers!), followed by a clock zero.   The start
+times in the two test files are the same, but they don't have to be.  The
+clock zero DOES HAVE TO BE THE SAME if you want to process the sites together.
+1.
+94 11 6 1 0 0
+94 11 6 0 0 0
+There are some  files in directory SP which provide information about the
+order of channels, system response, etc.  (all trivial in these examples)
+By convention these must have names like test1.sp (to go with test1.asc) etc.
+Paths (where to find data, system parameter descriptions, where to put FC
+files, where to find other configuration files, etc.) are set up  in test/paths.cfg. 
+The configuration files to define decimation levels, etc. are in test/CF.
+All of this provides a template for how to use for the real data: put time
+series in this simple ascii form in a "DATA" directory, modify *.sp files as
+needed, perhaps modify CF/*.cfg files, etc.
+
+--> To run dnff I typed:   bin/dnff -a
+and got this prompt:
+ ********************************************************
+ *                                                      *
+ *     DNFF     Version: 5.1.   Date: 03/10/1998        *
+ *                                                      *
+ ********************************************************
+
+   Reading from generic ASCII data file
+
+   Reading clock reset information from .clk file
+
+
+Enter input file name:                               
+
+I then entered: test1.asc
+
+and the program ran (a fraction of a second).  
+At the end it asks if you want to processes another file;
+I typed "y", was prompted for another input file name, typed "test2.asc"
+and then "n" when asked if there was another to process.
+The results appear in test/FC (as set in  paths.cfg).
+These are called "test1.f5" and "test2.f5".
+
+Note that the -a option is required for the simple ascii integer
+input format, with the clock information in a separate file.  The
+default is still a simple 2 byte integer binary format, that is 
+not likely to be useful to you.   There are others ... -A is the
+same ascii format, but with the clock information in the first 3 lines.
+
+--> Next run tranmtlr to compute impedances.  Everything is setup for
+this already.  Basically you need to set up an "options" file
+which tells the program about a few robust options, remote ref, etc.
+The options.cfg and options_RR.cfg files that are in test will work for
+this without change for starters (first is for single station, second for
+remote reference).  This file refers also to a "band set up" file,
+sitting in test/CF.  This is used to tell the program about frequency
+bands to process.  Typically this has to be adusted for different
+uses (depends on length of runs, how many times the time series
+is decimated in dnff, etc. , so long period MT for EarthScope might
+need a different setup than wideband MT for shallow applied studies).
+But once it is set for a particular use it is not typically changed.
+To run this with everything set for the test:
+
+ohm.OCE.ORST.EDU 198: bin/tranmtlr
+
+ *********************************************************
+ *        TRANMT   Version: 2.6 Date: 03/10/1998    *
+ *********************************************************
+
+     OUTPUT: Z-file format. Extensions zss (single site),
+     zrr (remote reference) are appended to the name
+     specified in tranmt.cfg.
+
+     Command line options:
+       -f<tranmt.cfg> to specify the configuration file
+       -s<group.cfg> for non-default grouping of channels
+       -x output spectral density matrix (.sdm)
+       -p print out # of first/last set per site and stop
+       -S<sets> process only specified sets
+              (see documentation for details).
+       -b<badRecFile> read from (dnff) bad record
+          record file to omit FCs that overlap specified
+          number segments
+
+ enter control file name
+
+And I entered "tranmt.cfg"
+
+This then did three processing runs: single site for test1
+and test2,  then RR for test1 with test2 as the remote.
+
+Note that there are lots of other options and more advanced ways
+to use, but probably it is best to get started and than ask  me
+question.
+
+--> the results are in test/MT (this is where the options.cfg file
+said to put them).  These are not EDI files!  They are in my
+format "Z-files" The ones labled *.zss are single site, *.zrr
+are remote reference (and if you used multiple station, for each
+MT site there would be a *.zmm file produced).   The z-files
+have a common format/meaning for all of the processing programs.
+They are ascii, and we have a converter to EDI (but I have to get
+this from Anna and send to you)  There is some matlab plotting
+capability in the matlab directory, and this is documented also.
+This is really old stuff, that I have substantially modified
+and not updated documentation for.  If you are interested I
+could send the newer matlab codes; what is included I haven't
+tried to use in some years.
+
+
+
+

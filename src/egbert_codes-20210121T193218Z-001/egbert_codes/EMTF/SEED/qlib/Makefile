@@ -1,0 +1,122 @@
+# @(#)Makefile	1.6 12/3/95 14:31:07
+
+# Set DESTDIR to the directory in which the executable will be installed.
+# Set BINDIR to the directory in which public libraries will be installed.
+
+TARGET1 = libqlib.a
+SOURCES = drm_utils.c qda_utils.c sdr_utils.c qtime.c qutils.c ms_utils.c\
+	unpack.c
+OBJECTS = ${SOURCES:%.c=%.o}
+
+INCDIR= /usr/local/include
+LIBDIR=	/usr/local/lib
+MANDIR=	/usr/local/man
+MANEXT=	3
+
+RANLIB	= ranlib
+CC= cc
+#CFLAGS = -g
+# -DSOLARIS2 will be needed for Solaris 2 support
+CFLAGS = -g  -DSOLARIS2
+#CFLAGS = -g -DLEAPSECONDS=\"${LIBDIR}/leapseconds\"
+INCL = -I. -I/usr/local/lib/quanterra/qlib
+LIBS = 
+
+.PRECIOUS:	${TARGET}
+
+all: ${TARGET1}
+
+${TARGET1}:	${TARGET1}(${OBJECTS})
+	${RANLIB} $@
+
+install:	${TARGET} leapseconds 
+#	install -c leapseconds ${LIBDIR}/leapseconds
+	install -c *.h *.inc ${INCDIR}
+	install -c ${TARGET1} ${LIBDIR}
+	(cd ${LIBDIR}; ${RANLIB} ${TARGET1})
+
+install_man:	qlib.man
+	install -c qlib.man $(MANDIR)/man$(MANEXT)/qlib.$(MANEXT)
+	
+clean:
+	rm -f *.o ${TARGET}
+
+veryclean:	clean
+	rm -f ${TARGET}
+
+tar:
+	(cd ..; tar cf - qlib/*.c qlib/*.h qlib/Makefile qlib/*.inc \
+	qlib/README* qlib/CHANGES* qlib/leapseconds qlib/*.man \
+	qlib/*.a) \
+	| compress > /tmp/qlib.tar.Z
+
+depend:
+	makedepend *.c *.h
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+drm_utils.o: /usr/include/stdio.h /usr/include/stdlib.h
+drm_utils.o: /usr/include/sys/stdtypes.h /usr/include/memory.h
+drm_utils.o: /usr/include/string.h qlib.h defines.h datatypes.h timedef.h
+drm_utils.o: /usr/include/time.h /usr/include/sys/time.h steim.h steim1.h
+drm_utils.o: steim2.h sdr.h qda.h seismo.h data_hdr.h qtime.h qutils.h
+drm_utils.o: qda_utils.h drm_utils.h sdr_utils.h ms_utils.h unpack.h
+ms_utils.o: /usr/include/stdio.h /usr/include/stdlib.h
+ms_utils.o: /usr/include/sys/stdtypes.h /usr/include/memory.h
+ms_utils.o: /usr/include/string.h /usr/include/math.h
+ms_utils.o: /usr/include/floatingpoint.h /usr/include/sys/ieeefp.h qlib.h
+ms_utils.o: defines.h datatypes.h timedef.h /usr/include/time.h
+ms_utils.o: /usr/include/sys/time.h steim.h steim1.h steim2.h sdr.h qda.h
+ms_utils.o: seismo.h data_hdr.h qtime.h qutils.h qda_utils.h drm_utils.h
+ms_utils.o: sdr_utils.h ms_utils.h unpack.h
+qda_utils.o: /usr/include/stdio.h /usr/include/stdlib.h
+qda_utils.o: /usr/include/sys/stdtypes.h /usr/include/memory.h
+qda_utils.o: /usr/include/string.h qlib.h defines.h datatypes.h timedef.h
+qda_utils.o: /usr/include/time.h /usr/include/sys/time.h steim.h steim1.h
+qda_utils.o: steim2.h sdr.h qda.h seismo.h data_hdr.h qtime.h qutils.h
+qda_utils.o: qda_utils.h drm_utils.h sdr_utils.h ms_utils.h unpack.h
+qtime.o: /usr/include/stdio.h /usr/include/math.h
+qtime.o: /usr/include/floatingpoint.h /usr/include/sys/ieeefp.h
+qtime.o: /usr/include/time.h /usr/include/sys/stdtypes.h
+qtime.o: /usr/include/tzfile.h /usr/include/sys/param.h
+qtime.o: /usr/include/machine/param.h /usr/include/machine/devaddr.h
+qtime.o: /usr/include/sys/signal.h /usr/include/vm/faultcode.h
+qtime.o: /usr/include/stdlib.h /usr/include/string.h qlib.h defines.h
+qtime.o: datatypes.h timedef.h /usr/include/sys/time.h steim.h steim1.h
+qtime.o: steim2.h sdr.h qda.h seismo.h data_hdr.h qtime.h qutils.h
+qtime.o: qda_utils.h drm_utils.h sdr_utils.h ms_utils.h unpack.h
+qutils.o: /usr/include/stdio.h /usr/include/stdlib.h
+qutils.o: /usr/include/sys/stdtypes.h /usr/include/math.h
+qutils.o: /usr/include/floatingpoint.h /usr/include/sys/ieeefp.h
+qutils.o: /usr/include/errno.h /usr/include/sys/errno.h qlib.h defines.h
+qutils.o: datatypes.h timedef.h /usr/include/time.h /usr/include/sys/time.h
+qutils.o: steim.h steim1.h steim2.h sdr.h qda.h seismo.h data_hdr.h qtime.h
+qutils.o: qutils.h qda_utils.h drm_utils.h sdr_utils.h ms_utils.h unpack.h
+sdr_utils.o: /usr/include/stdio.h /usr/include/stdlib.h
+sdr_utils.o: /usr/include/sys/stdtypes.h /usr/include/memory.h
+sdr_utils.o: /usr/include/string.h /usr/include/time.h /usr/include/math.h
+sdr_utils.o: /usr/include/floatingpoint.h /usr/include/sys/ieeefp.h qlib.h
+sdr_utils.o: defines.h datatypes.h timedef.h /usr/include/sys/time.h steim.h
+sdr_utils.o: steim1.h steim2.h sdr.h qda.h seismo.h data_hdr.h qtime.h
+sdr_utils.o: qutils.h qda_utils.h drm_utils.h sdr_utils.h ms_utils.h unpack.h
+unpack.o: /usr/include/stdio.h /usr/include/stdlib.h
+unpack.o: /usr/include/sys/stdtypes.h /usr/include/math.h
+unpack.o: /usr/include/floatingpoint.h /usr/include/sys/ieeefp.h steim.h
+unpack.o: steim1.h steim2.h
+data_hdr.o: timedef.h /usr/include/time.h /usr/include/sys/stdtypes.h
+data_hdr.o: /usr/include/sys/time.h datatypes.h
+ms_utils.o: data_hdr.h datatypes.h sdr.h
+qda_utils.o: timedef.h /usr/include/time.h /usr/include/sys/stdtypes.h
+qda_utils.o: /usr/include/sys/time.h qda.h seismo.h
+qlib.o: defines.h datatypes.h timedef.h /usr/include/time.h
+qlib.o: /usr/include/sys/stdtypes.h /usr/include/sys/time.h steim.h steim1.h
+qlib.o: steim2.h sdr.h qda.h seismo.h data_hdr.h qtime.h qutils.h qda_utils.h
+qlib.o: drm_utils.h sdr_utils.h ms_utils.h unpack.h
+qtime.o: timedef.h /usr/include/time.h /usr/include/sys/stdtypes.h
+qtime.o: /usr/include/sys/time.h
+sdr_utils.o: timedef.h /usr/include/time.h /usr/include/sys/stdtypes.h
+sdr_utils.o: /usr/include/sys/time.h sdr.h data_hdr.h datatypes.h
+steim1.o: steim.h
+steim2.o: steim.h
+timedef.o: /usr/include/time.h /usr/include/sys/stdtypes.h
+timedef.o: /usr/include/sys/time.h
+unpack.o: steim.h

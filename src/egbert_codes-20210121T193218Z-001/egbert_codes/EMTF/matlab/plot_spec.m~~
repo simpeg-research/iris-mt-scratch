@@ -1,0 +1,33 @@
+load S_avg1_90-119
+n1 = 1
+pwr = S_1_1_avg(n1:64);
+freq = freq(n1:64)
+loglog(freq,pwr,'r')
+set(gca,'box','on')
+hold on
+pwr = S_2_2_avg(n1:64);
+loglog(freq,pwr,'g')
+pwr = S_6_6_avg(n1:64);
+loglog(freq,pwr,'r--')
+pwr = S_7_7_avg(n1:64);
+loglog(freq,pwr,'g--')
+
+load S_avg2_90-119
+freq = freq(n1:64)
+pwr = S_1_1_avg(n1:64);
+loglog(freq,pwr,'r')
+pwr = S_2_2_avg(n1:64);
+loglog(freq,pwr,'g')
+pwr = S_6_6_avg(n1:64);
+loglog(freq,pwr,'r--')
+pwr = S_7_7_avg(n1:64);
+loglog(freq,pwr,'g--')
+
+load S_avg3_90-119
+pwr = S_1_1_avg;
+loglog(freq,pwr,'r')
+pwr = S_2_2_avg;
+loglog(freq,pwr,'g')
+pwr = S_6_6_avg;
+loglog(freq,pwr,'r--')
+pwr = S_7_7_avg;

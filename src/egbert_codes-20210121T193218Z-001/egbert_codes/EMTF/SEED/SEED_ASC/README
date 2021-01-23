@@ -1,0 +1,43 @@
+seed_merge_asc (test program for seed data reading routines)
+
+To compile:  
+    o   Edit Makefile to set LIBARIES =  -L<qlib_path>  -L<fiolib_path>
+         (<qlib_path> is the directory where the qlib library (a file called libqlib.a) is;
+          similarly, libfiolib.a--the file contatining the libfio library--is
+          in <lfiolib_path>).  E.g., <qlib_path> = ../qlib ...
+          
+
+    o   Type "make seed_merge_asc"  ... the executable should appear
+
+To run:  edit the ascii file called "cf_station"--this file tells the program
+which data files to use, where to put output etc.   (NOTE: the same file is used
+to pass info to the FT program ... so there are a couple of extra lines here
+which are not used in this test program
+
+Here is cf_station file used for one half day of 1 hz data from SAO, starting at the
+begining of day 157.
+
+5 156                  <-- line 1 : # of data channels , day of year for sample # 0  **
+DATA/shx.157           <-- lines 2 - 6  data file name for each channel, in order
+DATA/shy.157           <-- desired  (NOTE:  It will be simplest for my processing
+DATA/shz.157           <--           programs if the channels are ordered Hx, Hy, Hz, then all Es.
+DATA/sex.157
+DATA/sey.157
+sp_file                <-- this line not needed here ... leave blank (system parameter file)
+SAO_157                <-- output file name
+
+
+Once this file is edited, just type seed_merge_asc to run.
+
+The result should be the output ascii file SAO_157.  This file will have 6 integers on a
+line: sample #, Hx, Hy, Hz, Ex, Ey .   
+
+** NOTE:  The sample # gives samples since 0:00:00 on day 156
+(or whatever day is entered on line 1).  To combine data from several FTed time segments
+together, it is neccessary to have all time windows start together, be marked with a time, etc.
+this is all kept track of in terms of the "sample numbers", relative to some arbitrary
+start time.   For purposes of this array, where abolute time is more important 
+it might be good to use somthing like day 1 (Jan. 1, 199*) for the zero time.
+
+   
+

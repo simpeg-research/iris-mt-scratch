@@ -1,0 +1,95 @@
+%%%   change folowing code to run for different data files ...
+%   # of stations, frequencies
+nsta = 2;
+nfreq = 64;
+
+%  set up bands for one decimation level ... (here just one frequency/band)
+%iband = ones(2,1)*[1:29 31:64];
+%nbands = 63;
+iband = ones(2,1)*[1:nfreq];
+nbands = nfreq;
+
+%   decimation level
+%   Time average ... number of sets to average
+%   doesn't now work with navg = 1
+%id = 1; navg = 10;
+%id = 2; navg = 4;
+id = 3; navg = 2;
+%   set starting day ...
+day1 = 170;
+% currently assumes you want to use all days in the 10 day directory
+day2 = day1+9;
+
+%   for 5 channels at both sites ...
+if(day1 < 100 )
+  sta =  [ 'PKD10' ;'SAO0 '] ;
+  dir = [ '/home/server/scratch/sierra/DATA/D0' num2str(day1) '96/FC/'];
+end
+if ( day1 >= 100 )
+  sta =  [ 'PKD1' ;'SAO '] ;
+  dir = [ '/home/server/scratch/sierra/DATA/D' num2str(day1) '96/FC/'];
+  fprintf(1,'Directory =  %s \n ',dir);
+end
+
+%  for 5 channels at both sites:
+fc = [ 'f5' ; 'f5' ];
+%  for 3 channels at SAO  (i.e., for day1 < ???)
+%fc = [ 'f5' ; 'f3' ];
+sta = [ fc sta ];
+nchar_sta = length(sta(2,:))-1;
+
+% output file name
+out_file = [ dir 'Tvar_' num2str(id) '_' num2str(day1) '-' num2str(day2) '.mat'];
+%   read in sampling rates .... needed for frequency calculation ...
+cfile = [dir sta(1,:) num2str(day1) ; dir sta(2,1:nchar_sta) num2str(day2)  ' ' ];
+nchar = [ length(cfile(1,:)) length(cfile(2,:))-1 ];
+[nd,nf,nch1,chid1,orient1,drs,stdec,decs,fid,start_dec] ...
+                    = fc_open(cfile(1,1:nchar(1)));
+fclose(fid);
+freq = mean(iband)/(2*nfreq*drs(id));
+
+resid_setup
+
+Hxx = [];
+Hyy = [];
+Exx = [];
+Eyy = [];
+Hxy = [];
+Rx = [];
+Ry = [];
+ndays = 0;
+t_all = [];
+for day = day1:day2
+%   NOTE :::  add  space to end of SAO to acount for different file name
+%    lengths (when PKD1 is used ...)
+   cfile = [dir sta(1,:) num2str(day) ; dir sta(2,1:nchar_sta) num2str(day)  ' ' ];
+%    this BS ... and ' ' above ... to deal with PKD1 vs SAO  +
+%           matlab 4 limitations on characters and matrices
+   nchar = [ length(cfile(1,:)) length(cfile(2,:))-1 ];
+%  change tvar to change which auto/cross/residual powers are computed
+%   presently computes/saves Hxx Hyy Hxy at station # 1 ... PKD
+%   NOTE ::::   ALL OF THE FILE READING AND COMPUTATION HAPPENS IN TVAR ...
+   fprintf(' Day # %d \n',day);
+   tvar
+   if(fid > 0 )
+     Hxx = [Hxx Hx_power ];
+     Hyy = [Hyy Hy_power ];
+     Exx = [Exx Ex_power ];
+     Eyy = [Eyy Ey_power ];
+     Hxy = [Hxy Hxy_cross ];
+     Rx = [ Rx Ex_res ] ;
+     Ry = [ Ry Ey_res ] ;
+     t_all = [t_all time' ];
+     ndays = ndays + 1;
+   end
+end
+
+eval( [ 'save ' out_file ' navg ndays t_all freq Hxx Hyy Exx Eyy Hxy Rx Ry' ] );
+
+pcolor(t_all,freq,log10(Rx./Exx));
+caxis([-3,1.])
+shading flat
+colorbar
+hsvmat = hsv(64);
+hsvmat = hsvmat(1:56,:);
+colormap(hsvmat)

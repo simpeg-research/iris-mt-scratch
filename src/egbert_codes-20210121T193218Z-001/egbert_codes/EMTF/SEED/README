@@ -1,0 +1,21 @@
+There are two programs provided here for reading miniseed
+files obtained from the Berkeley sesmological laboratory.
+
+1)  seed_merge_asc (in SEED_ASC) reads files for a number of simultaneous
+data channels (one per miniseed file) and outputs a multichannel file
+in a simple and obvious integer ascii format.
+
+2) dnff_seed : a special version of dnff that reads directly
+from a set of miniseed files, and computes an FC file.
+
+dnff_seed requires also the usual dnff subroutines
+Install this directory next to D, T etc in EMTF directory and
+everything should be easy.
+
+Both dnff_seed and seed_merge_asc need to link to libraries provided
+by the seismo lab (in fiolib and qlib).  These libraries are made
+for a solaris system.  Source code is provided, but some changes will
+be needed to compile on another system (minor for sunos ... probably
+impossible for everything else, since the libraries use sun-specific
+extensions to fortran)
+

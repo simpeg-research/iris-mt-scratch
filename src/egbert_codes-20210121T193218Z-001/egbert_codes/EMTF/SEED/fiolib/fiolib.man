@@ -1,0 +1,128 @@
+.\@(#)fiolib.man	1.1 10/08/93 12:00:00
+.TH fiolib 3 "8 October 1993" MISC
+.SH NAME
+libfio - C-style unbuffered and buffered file I/O routines for FORTRAN
+.SH SYNOPSIS
+.nf
+.sp
+\f2 fd = iopen(path, flags, mode)\f1
+\f3 integer*4 fd \f1      ! file descriptor(negative for error)
+\f3 character*(*) path\f1 ! file name
+\f3 integer*4 flags\f1    ! 'open' flags(see /usr/include/sys/fcntl.h)
+\f3 integer*4 mode\f1     ! eg. '660'O
+.sp
+.nf
+.ft CW
+\f2 n = iread(fd, buf, bytes)\f1
+\f3 integer*4 n	              \f1 ! number of bytes actually read(neg for error)
+\f3 integer*4 fd                 \f1 ! file descriptor (from iopen)
+\f3 any kind of array or variable\f1 ! data buffer
+\f3 integer*4 bytes              \f1 ! number of bytes to read
+.sp
+\f2 n = iwrite(fd, buf, bytes)\f1
+\f3 integer*4 n	              \f1 ! number of bytes actually written(neg for error)
+\f3 integer*4 fd                 \f1 ! file descriptor (from iopen)
+\f3 any kind of array or variable\f1 ! data buffer
+\f3 integer*4 bytes              \f1 ! number of bytes to write
+.sp
+\f2 pos = lseek(fd, offset, whence)\f1
+\f3 integer*4 pos   \f1	! new file position (neg for error)
+\f3 integer*4 fd    \f1	! file descriptor (from iopen)
+\f3 integer*4 offset\f1	! see man page for lseek
+\f3 integer*4 whence\f1	! ditto
+.sp
+\f2 code = iclose(fd)\f1
+\f3 integer*4 code \f1	! 0 => success; -1 => failure
+\f3 integer*4 fd   \f1	! file descriptor (from iopen)
+.sp
+\f2 fp = ifopen(path, type)\f1
+\f3 integer*4 fp		! file pointer (0 (NULL) for error)\f1
+\f3 character*(*) path	! file name\f1
+\f3 character*(*) type	! file type ("r", "w", ...)\f1
+.sp
+\f2 n = ifread(buf, size, nelem, fp)\f1
+\f3 any kind of array or variable	! data buffer\f1
+\f3 integer*4 size		! size of element in bytes\f1
+\f3 integer*4 nelem		! number of elements to read\f1
+\f3 integer*4 fp		! file pointer (from ifopen)\f1
+.sp
+\f2 n = ifwrite(buf, size, nelem, fp)\f1
+\f3 any kind of array or variable	! data buffer\f1
+\f3 integer*4 size		! size of element in bytes\f1
+\f3 integer*4 nelem		! number of elements to write\f1
+\f3 integer*4 fp		! file pointer (from ifopen)\f1
+.sp
+\f3 result = ifseek(fp, offset, whence)\f1
+\f3 integer*4 result	! 0 for OK, -1 for error\f1
+\f3 integer*4 fp		! file pointer (from ifopen)\f1
+\f3 integer*4 offset	! see man page (3s) for fseek\f1
+\f3 integer*4 whence	! ditto\f1
+.sp
+\f2 code = ifflush(fp)\f1
+\f3 integer*4 code		! 0 => success; -1 => failure\f1
+\f3 integer*4 fp		! file pointer (from ifopen)\f1
+.sp
+\f2 code = ifclose(fp)\f1
+\f3 integer*4 code		! 0 => success; -1 => failure\f1
+\f3 integer*4 fp		! file pointer (from ifopen)\f1
+.fi
+.SH EXAMPLES
+Example of unbuffered io.
+.sp
+.nf
+	integer fd
+	real data(1024)
+	integer n
+	integer iopen, iread, iclose 
+	fd = iopen('waveform.dat', 0, 0)
+ 	if ( fd .lt. 0 ) then
+ 		call perror('opening data file')
+ 		call exit(1)
+ 	endif
+	n = iread(fd, data, 1024*4)
+ 	if ( n .lt. 0 ) then
+ 		call perror('reading data file')
+ 		call exit(1)
+ 	endif
+ 	if ( n .ne. 1024*4 ) then
+ 		print *, 'not enough data in file'
+ 		call exit(1)
+ 	endif
+ 	if ( iclose(fd) .ne. 0 ) then
+ 		call perror('closing data file')
+        	call exit(1)
+ 	endif
+.fi
+.sp
+Example of buffered I/O.
+.sp
+.nf
+	integer fp
+	real data(1024)
+	integer n
+	integer iopen, iread, iclose
+
+	fp = ifopen('waveform.dat', 'r')
+	if ( fp .eq. 0 ) then
+	   call perror('opening data file')
+	   call exit(1)
+	endif
+	i = 1
+ 	nread = 0
+	left = 1024
+ 100	n = ifread(data, 4, left, fp)
+	if ( n .le. 0 ) then
+	   call perror('reading data file')
+	   call exit(1)
+	endif
+	left = left - n
+	if (left .gt. 0 .and. n .gt. 0) goto 100
+	if (left .gt. 0) then
+	    call perror ('not enough data in data file')
+	    call exit(1)
+	endif
+	if ( ifclose(fp) .ne. 0 ) then
+	   call perror('closing data file')
+	   call exit(1)
+	endif
+.fi

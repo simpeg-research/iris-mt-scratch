@@ -1,0 +1,9 @@
+%  call this routine after setting up frequencies ...
+%  Modified version loads an averaged TF + noise variance
+%     estimates for each day (NOTE: these are zero if channel is missing ...
+load /home/ohm/data/EQAR/MAT_ARR/avgPW_96-97
+
+%  interpolate averaged TF onto frequencies used ...
+u1 = squeeze(Vmed(1,:,:)).';
+u2 = squeeze(Vmed(2,:,:)).';
+[U1,U2,SIGMA_N] = U_interp(u1,u2,VarMed',periods,freq);
