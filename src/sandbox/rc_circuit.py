@@ -144,9 +144,22 @@ def test_rc_circuit():
     #OK, so the complex response looks as expected
     print('ok')
 
-def main():
-    test_rc_circuit()
+def test_rc_circuit_two_sided():
+    rc_circut = RCCircuit()
+    sampling_rate = 20; dt = 1./sampling_rate
+    frequencies = np.fft.fftfreq(1000, d=dt)
+    frequencies = np.fft.fftshift(frequencies)
+    s = j * 2 * np.pi * frequencies  # laplace variable from frequency axis s--> jw
 
+    cr_zpk = rc_circut.frequency_response_from_zpk(frequencies)
+    cr_standard = rc_circut.complex_response(frequencies)
+    tf = rc_circut.evaluate_transfer_function(s)
+    plt.plot(frequencies, np.abs(cr_zpk)); plt.show()
+    print('ok')
+
+def main():
+    #test_rc_circuit()
+    test_rc_circuit_two_sided()
 
 if __name__ == "__main__":
     main()
