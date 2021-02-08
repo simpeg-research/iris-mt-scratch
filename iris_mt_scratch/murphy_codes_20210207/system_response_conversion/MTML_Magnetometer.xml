@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1"
+                xmlns:iris="http://www.fdsn.org/xml/station/1/iris"
+                xmlns:mt="http://emiw.org/xmlns/mt/1.0"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                schemaVersion="1.1"
+                xsi:schemaLocation="http://www.fdsn.org/xml/station/1 http://www.fdsn.org/xml/station/fdsn-station-1.1.xsd">
+   <Source>IRIS-DMC</Source>
+   <Module>mth5_to_mtml.m by A. Kelbert</Module>
+   <Created>2020-10-29T14:40:49</Created>
+   <Network code="EM" restrictedStatus="open" startDate="1996-01-01T00:00:00">
+      <Description>Florida 2015 Long Period and Wideband</Description>
+      <Identifier>http://doi.org/10.17611/DP/EMTF/USGS/GEOMAG/FL15</Identifier>
+      <Operator>
+         <Agency>U.S. Geological Survey</Agency>
+         <Contact>
+            <Name>Bedrosian, P. A.</Name>
+            <Email>pbedrosian@usgs.gov</Email>
+         </Contact>
+      </Operator>
+      <SelectedNumberStations>1</SelectedNumberStations>
+      <Station alternateCode="FL001" code="FL001" endDate="2015-01-29T16:18:14"
+               iris:alternateNetworkCodes="_INT-NON_FDSN,.UNRESTRICTED,_US-ALL,_US-MT,_US-MT-TA"
+               restrictedStatus="open"
+               startDate="2015-01-08T19:49:15">
+         <Latitude>29.7203555</Latitude>
+         <Longitude>-83.4854715</Longitude>
+         <Elevation>0</Elevation>
+         <Site>
+            <Name>Beachy Keen, FL, USA</Name>
+            <Country>USA</Country>
+         </Site>
+         <Equipment resourceId="mt_run_id_a">
+            <Type>BB, LP</Type>
+            <Description>timing_system.type: GPS, timing_system.drift: , timing_system.uncertainty: , timing_system.comments: , firmware.author: Barry Narod, firmware.version: , power_source.type: battery, power_source.comments: voltage measurements not recorded</Description>
+            <Manufacturer>Barry Narod</Manufacturer>
+            <Model>NIMS</Model>
+            <SerialNumber>1305-1</SerialNumber>
+            <InstallationDate>2015-01-08T19:49:15</InstallationDate>
+            <RemovalDate>2015-01-19T14:54:54</RemovalDate>
+         </Equipment>
+         <Equipment resourceId="mt_run_id_b">
+            <Type>BB, LP</Type>
+            <Description>timing_system.type: GPS, timing_system.drift: , timing_system.uncertainty: , timing_system.comments: , firmware.author: Barry Narod, firmware.version: , power_source.type: battery, power_source.comments: voltage measurements not recorded</Description>
+            <Manufacturer>Barry Narod</Manufacturer>
+            <Model>NIMS</Model>
+            <SerialNumber>1305-1</SerialNumber>
+            <InstallationDate>2015-01-19T16:16:31</InstallationDate>
+            <RemovalDate>2015-01-29T16:18:14</RemovalDate>
+         </Equipment>
+         <CreationDate>2015-01-29T16:18:14</CreationDate>
+         <TotalNumberChannels>5</TotalNumberChannels>
+         <SelectedNumberChannels>5</SelectedNumberChannels>
+         <Channel alternateCode="Hx" code="MFN" endDate="2015-01-29T16:18:14" locationCode=""
+                  mt:runList="a, b"
+                  restrictedStatus="open"
+                  startDate="2015-01-08T19:49:15">
+            <Latitude>29.7203555</Latitude>
+            <Longitude>-83.4854715</Longitude>
+            <Elevation>0</Elevation>
+            <Depth>0</Depth>
+            <Azimuth>355.9</Azimuth>
+            <Dip>0</Dip>
+            <Type>GEOPHYSICAL</Type>
+            <SampleRate>8</SampleRate>
+            <ClockDrift>0</ClockDrift>
+            <CalibrationUnits>
+               <Name>nT</Name>
+               <Description>nanotesla</Description>
+            </CalibrationUnits>
+            <Sensor>
+               <Description>NIMS 1305-1</Description>
+            </Sensor>
+            <Response>
+               <InstrumentSensitivity>
+                  <Value>100000000000</Value>
+                  <Frequency>0</Frequency>
+                  <InputUnits>
+                     <Name>nT</Name>
+                     <Description>nanotesla</Description>
+                  </InputUnits>
+                  <OutputUnits>
+                     <Name>counts</Name>
+                     <Description>Digital Counts</Description>
+                  </OutputUnits>
+               </InstrumentSensitivity>
+               <Stage number="1">
+                   <!-- Name field is equivilent of name proposed mt:name. Description is equivilent of proposed mt:type-->
+                   <PolesZeros name = "magnetic field 3 pole Butterworth low-pass"> 
+                     <Description> poles and zeros </Description> 
+                     <InputUnits>
+                        <Name>nT</Name>
+                        <Description>nanotesla</Description>
+                     </InputUnits>
+                     <OutputUnits>
+                        <Name>nT</Name>
+                        <Description>nanotesla</Description>
+                     </OutputUnits>
+                     <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+                     <NormalizationFactor>1984.31439386406</NormalizationFactor>
+                     <NormalizationFrequency>0</NormalizationFrequency>
+                     <Pole number="0">
+                        <Real>-6.283185</Real>
+                        <Imaginary>10.882477</Imaginary>
+                     </Pole>
+                     <Pole number="1">
+                        <Real>-6.283185</Real>
+                        <Imaginary>-10.882477</Imaginary>
+                     </Pole>
+                     <Pole number="2">
+                        <Real>-12.566371</Real>
+                        <Imaginary>0</Imaginary>
+                     </Pole>
+                  </PolesZeros>
+                  <StageGain>
+                     <Value>1</Value>
+                     <Frequency>0</Frequency>
+                  </StageGain>
+               </Stage>  
+             <!-- ANALOG TO DIGITAL CONVERSION STAGE -->
+               <Stage number="2">
+                   <Coefficients name ="magnatometer A to D">
+                      <Description>ADC</Description>
+                      <InputUnits>
+                       <Name>nT</Name>
+                       <Description>nanoTesla</Description>
+                      </InputUnits>
+                      <OutputUnits>
+                       <Name>count</Name>
+                       <Description>Counts</Description>
+                      </OutputUnits>
+                      <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+                      <Numerator minusError="0.00000" plusError="0.00000">1.00000</Numerator>
+                   </Coefficients>
+                   <Decimation>
+                     <InputSampleRate>8</InputSampleRate>
+                     <Factor>1</Factor>
+                     <Offset>0</Offset>
+                     <Delay>1</Delay>
+                     <Correction>0</Correction>
+                   </Decimation>
+                   <StageGain>
+                    <Value>100000000000</Value>
+                    <Frequency>0</Frequency>
+                </StageGain>
+            </Stage>
+             <!-- TIME CORRECTION STAGE -->
+             <Stage number="3">
+                 <Coefficients name ="Hz time offset">
+                    <Description>Time Offset (seconds)</Description>
+                    <InputUnits>
+                     <Name>count</Name>
+                     <Description>Count</Description>
+                    </InputUnits>
+                    <OutputUnits>
+                     <Name>count</Name>
+                     <Description>Count</Description>
+                    </OutputUnits>
+                     <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+                     <Numerator minusError="0.00000" plusError="0.00000">1.00000</Numerator>
+                    </Coefficients>
+                    <Decimation>
+                     <InputSampleRate>8</InputSampleRate>
+                     <Factor>1</Factor>
+                     <Offset>0</Offset>
+                     <Delay>0.2455</Delay>
+                     <Correction>0</Correction>
+                    </Decimation>
+                    <StageGain>
+                     <Value>1</Value>
+                     <Frequency>0</Frequency>
+                 </StageGain>
+             </Stage>
+            </Response>
+         </Channel>
+      </Station>
+   </Network>
+</FDSNStationXML>
