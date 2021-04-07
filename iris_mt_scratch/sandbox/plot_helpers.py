@@ -27,8 +27,8 @@ def plot_complex_response(frequency, complex_response, **kwargs):
     ax1.set_title("{}-{}    Amplitude Response".format(make, model))
     ax1.grid(True, which="both", ls="-")
     ax1.set_ylabel("{}".format(y_amp_string))
-    yL = ax1.get_ylim();
-    ax1.set_ylim((yL[0], 1.1*yL[1]))
+    y_lim = ax1.get_ylim();
+    ax1.set_ylim((y_lim[0], 1.1*y_lim[1]))
     ax2 = plt.subplot(2,1,2)
     ax2.semilogx(frequency, phase, linewidth = linewidth)
     ax2.set_title("{}-{}    Phase Response".format(make, model))
