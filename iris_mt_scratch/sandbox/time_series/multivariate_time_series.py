@@ -27,6 +27,12 @@ class MultiVariateTimeSeries(object):
 
     ?Do we want to populate with an xarray outside this method?
 
+    How to store the xarray?  The xarray is like a property of the MVTS, ... or  ...
+    should we use an xarray as the base class itself?  I think we should store
+    it as an attr; otherwise we will have trouble with class methods...
+    although one could write a collection of methods that operate
+    on an xarray ... 
+
     """
 
     def __init__(self, **kwargs):
@@ -34,6 +40,7 @@ class MultiVariateTimeSeries(object):
         self.sampling_rate = kwargs.get('sps', None)
         self.t0 = kwargs.get('t0', None)
         self.data = kwargs.get('data', None)
+        self.xarray = kwargs.get('xarray', None)
         self.dims = kwargs.get('dims', [])
         # if self.data is not None:
         self._duration = kwargs.get('duration', None)
@@ -217,7 +224,7 @@ def test_generate_time_axis(t0, n_samples, sampling_rate):
 
 
 def test_multivariate_time_series():
-    n_samples = int(1e3); n_ch = 1
+    n_samples = int(1e3); n_ch = 3#works for n_ch=1
     channel_labels = ["Hx", "Hy", "Hz"]
     sampling_rate = 3.0 #Hz
     t0 = pd.Timestamp(2021, 4, 4, 14, 20, 44)
