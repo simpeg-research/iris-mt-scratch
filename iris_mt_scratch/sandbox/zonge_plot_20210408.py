@@ -1,24 +1,51 @@
-
+import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 import pandas as pd
+matplotlib.rc('text', usetex = True)
+plt.ioff()
+#matplotlib.pyplot.grid(True, which="both")
 
 file_basename = '3914.csv'
-folder = "/home/kkappler/Documents/IRIS_MT"
+folder = "/home/kkappler/Documents/IRIS_MT/calibration_files/from_andy_08_april"
 file_path = os.path.join(folder, file_basename)
 
 df = pd.read_csv(file_path)
+df['phase'] = df['phase']/1000.0#radians
+df['phase'] = df['phase']*180/3.14159 #degrees
+df = df.sort_values(by=['frequency'])
 
-base = df[df["is_base_frequency"]==1]
-f_base = df['frequency']
-ampl_base = df['amplitude']
-phase_base = df['phase']
+#logf = np.log10(f)
+#f = df['frequency']
 
+base_df = df[df["is_base_frequency"]==1]
+f_base = base_df['frequency']
+ampl_base = base_df['amplitude']
+phase_base = base_df['phase']
+
+harmonic_df = df[df["is_base_frequency"]==0]
+f_harmonic = harmonic_df['frequency']
+ampl_harmonic = harmonic_df['amplitude']
+phase_harmonic = harmonic_df['phase']
 f = df['frequency']
 ampl = df['amplitude']
 phase = df['phase']
 
-fig, ax = plt.subplots(2,1,1)
-ax[0].plot(f, ampl)
+#fig, ax = plt.subplot(2,1,1)
+fig, ax = plt.subplots(nrows=2, sharex=True)
+ax[0].semilogx(f, ampl)
+ax[0].semilogx(f_base, ampl_base, 'ro', label='base $f$')
+ax[0].semilogx(f_harmonic, ampl_harmonic, 'bo', label='harmonic $f$')
+ax[0].set_ylabel("Amplitude $\mu$V/nT ")
+ax[0].grid(True, which="both")
+ax[0].legend()
+ax[1].semilogx(f, phase)
+ax[1].semilogx(f_base, phase_base, 'ro')
+ax[1].semilogx(f_harmonic, phase_harmonic, 'bo')
+ax[1].set_ylabel("Phase (degrees)")
+ax[1].set_xlabel("Frequency (Hz)")
+ax[1].grid(True, which="both")
+ax[0].set_title("Response for Coil 3914")
 plt.show()
 
