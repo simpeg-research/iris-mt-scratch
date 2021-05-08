@@ -29,10 +29,15 @@ Example 2
 "family" = "kaiser"
 "length" = 64
 "additional_args" = {"beta":8}
+
 2. user-defined: ["family", "array"]
 In this case length is defined by the array.
 "family" = "user-defined"
 "array" = [1, 2, 3, 4, 5, 4, 3, 2, 1]
+
+TODO: This is not quite satisfying, because the user-defined taper may want to have
+a "family" label ... so it is probably better to have array be empty all the time
+and when it is not empty that implies user defined-ness.  In that case
 
 
 """
@@ -84,7 +89,7 @@ class ApodizationWindow():
         kwargs
         """
         self.family = kwargs.get('family', '')
-        self.length = kwargs.get('length', -1)
+        self._length = kwargs.get('length', 0)
         self.taper = kwargs.get('array', np.empty(0))
         self.additional_args = kwargs.get('additional_args', {})
         self.coherent_gain = None
@@ -93,20 +98,8 @@ class ApodizationWindow():
         self.S2 = None
         self._apodization_factor = None
 
-        #here are some conditions for making taper
-        condition_1 = len(self.family) != 0
-        condition_2 = self.length != -1
-        condition_3 = self.taper.size == 0
-
-        if (condition_1 and condition_2 and condition_3):
+        if self.taper.size==0:
             self.make()
-        elif (not condition_3):
-            # user defined taper.
-            logging.info("user defined taper being initiated")
-            if (self.length == -1):
-                self.length = len(self.taper)
-            if (self.family == ''):
-                self.family = 'user-defined'
 
 
     def __str__(self):
@@ -117,9 +110,15 @@ class ApodizationWindow():
         """
         return f"{self.family} {self.length} taper_exists={bool(self.taper.any())}"
 
+    @property
+    def length(self):
+        if self._length==0:
+            self._length = len(self.taper)
+        return self._length
 
     def make(self):
         """
+        this is just a wrapper call to scipy.signal
         @note: see scipy.signal.get_window for a description of what is
         expected in args[1:]. http://docs.scipy.org/doc/scipy/reference/
         generated/scipy.signal.get_window.html
