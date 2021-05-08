@@ -18,20 +18,20 @@ scipy.signal.get_window()
     }
 
 The Taper Config has 2 possible forms:
-1. Standard form: ["family", "length", "additional_args"]
+1. Standard form: ["family", "num_samples_window", "additional_args"]
 
 Example 1
 "family" = "hamming"
-"length" = 128
+"num_samples_window" = 128
 "additional_args" = {}
 
 Example 2
 "family" = "kaiser"
-"length" = 64
+"num_samples_window" = 64
 "additional_args" = {"beta":8}
 
 2. user-defined: ["array"]
-In this case length is defined by the array.
+In this case num_samples_window is defined by the array.
 "array" = [1, 2, 3, 4, 5, 4, 3, 2, 1]
 
 If "array" is non-empty then the assumption is that we are in the user defined case.
@@ -43,6 +43,9 @@ For example
 "family" = 'general_gaussian'
 "additional_args" = OrderedDict("power":1.5, "sigma":7)
 
+
+TODO: decide if self.length should be self.num_samples_window.  If so it should probably be changed in the
+config to be called num_samples
 """
 # import iris_mt_scratch.logging_util import init_logging
 # logger = init_logging(__name__,module_name = 'aurora.time_series.taper')
@@ -52,13 +55,13 @@ import numpy as np
 import scipy.signal as ssig
 
 
-class ApodizationWindow():
+class ApodizationWindow(object):
     """
     usage: apod_window = ApodizationWindow()
     @type family: string
     @ivar family: Specify the taper type - boxcar, kaiser, hanning, etc
-    @type length: Integer
-    @ivar length: The length of taper
+    @type num_samples_window: Integer
+    @ivar num_samples_window: The number of samples in the taper
     @type taper: numpy array
     @ivar taper: The actual taper window itself
     @type coherentGain: float
@@ -72,7 +75,7 @@ class ApodizationWindow():
 
     @author: kkappler
     @note: example usage:
-        tpr=ApodizationWindow(family='hanning', length=55 )
+        tpr=ApodizationWindow(family='hanning', num_samples_window=55 )
 
     Window factors S1, S2, CG, ENBW are modelled after Heinzel et al. p12-14
     [1] Spectrum and spectral density estimation by the Discrete Fourier transform
@@ -95,7 +98,7 @@ class ApodizationWindow():
         kwargs
         """
         self.family = kwargs.get('family', '')
-        self._length = kwargs.get('length', 0)
+        self._num_samples_window = kwargs.get('num_samples_window', 0)
         self.taper = kwargs.get('array', np.empty(0))
         self.additional_args = kwargs.get('additional_args', {})
         self.coherent_gain = None
@@ -110,12 +113,12 @@ class ApodizationWindow():
     @property
     def summary(self):
         """
-        Returns a string comprised of the family, length, and True/False if self.taper is not None
+        Returns a string comprised of the family, number_of_samples, and True/False if self.taper is not None
         -------
 
         """
-        string1 = f"{self.family} {self.length} taper_exists={bool(self.taper.any())}"
-        string2 = f"NENBW:{self.nenbw}, CG:{self.coherent_gain} window factor={self.apodization_factor}"
+        string1 = f"{self.family} {self.num_samples_window} taper_exists={bool(self.taper.any())}"
+        string2 = f"NENBW:{self.nenbw:.3f}, CG:{self.coherent_gain:.3f} window factor={self.apodization_factor:.3f}"
         return "\n".join([string1, string2])
 
     def __str__(self):
@@ -124,10 +127,10 @@ class ApodizationWindow():
         return f"{self.taper}"
 
     @property
-    def length(self):
-        if self._length==0:
-            self._length = len(self.taper)
-        return self._length
+    def num_samples_window(self):
+        if self._num_samples_window==0:
+            self._num_samples_window = len(self.taper)
+        return self._num_samples_window
 
     def make(self):
         """
@@ -141,8 +144,8 @@ class ApodizationWindow():
         window_args = [v for k,v in self.additional_args.items()]
         window_args.insert(0, self.family)
         window_args = tuple(window_args)
-        self.taper = ssig.get_window(window_args, self.length)
-
+        self.taper = ssig.get_window(window_args, self.num_samples_window)
+        self.calc_apodization_factor
         return
 
 
@@ -150,8 +153,8 @@ class ApodizationWindow():
     def calc_apodization_factor(self):
         S1 = sum(self.taper)
         S2 = sum(self.taper**2);
-        self.coherent_gain = S1 / self.length
-        self.nenbw = self.length*S2/(S1**2)
+        self.coherent_gain = S1 / self.num_samples_window
+        self.nenbw = self.num_samples_window*S2/(S1**2)
         self._apodization_factor = np.sqrt(self.nenbw)*self.coherent_gain
         return
 
@@ -164,17 +167,17 @@ class ApodizationWindow():
 def test_can_inititalize_apodization_window():
     """
     """
-    apodization_window = ApodizationWindow(family='hamming', length=128)
+    apodization_window = ApodizationWindow(family='hamming', num_samples_window=128)
     print(apodization_window.summary)
     #print(apodization_window)
-    apodization_window = ApodizationWindow(family='blackmanharris', length=256)
+    apodization_window = ApodizationWindow(family='blackmanharris', num_samples_window=256)
     print(apodization_window.summary)
-    apodization_window = ApodizationWindow(family='kaiser', length=128, additional_args={"beta":8})
+    apodization_window = ApodizationWindow(family='kaiser', num_samples_window=128, additional_args={"beta":8})
     print(apodization_window.summary)
-    apodization_window = ApodizationWindow(family='slepian', length=64, additional_args={"width":0.3})
+    apodization_window = ApodizationWindow(family='slepian', num_samples_window=64, additional_args={"width":0.3})
     print(apodization_window.summary)
     # print(apodization_window)
-    pass
+
 
 def main():
     """
