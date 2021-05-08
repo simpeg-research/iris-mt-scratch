@@ -18,6 +18,8 @@ from windowing_scheme_aurora import WindowingScheme
 
 
 
+
+#<OPERATORS>
 def sliding_window_crude(data, num_samples_window, num_samples_advance, num_windows=None):
     """
 
@@ -112,50 +114,61 @@ def striding_window(data, num_samples_window, num_samples_advance, num_windows=N
     strided_window = as_strided(data, shape=output_shape,
                                 strides=strides_shape)#, writeable=False)
     return strided_window
+#</OPERATORS>
 
 
-N = 10000000
-n_samples_window = 128; n_overlap = 96; n_advance = n_samples_window-n_overlap;
-#qq = np.random.random(N)
-qq = np.arange(N)
-windowing_scheme = WindowingScheme(num_samples_window=n_samples_window, num_samples_overlap=n_overlap)
-print(windowing_scheme.num_samples_advance)
-print(windowing_scheme.available_number_of_windows(N))
-# print(qq.shape)
-# qq = np.atleast_2d(qq)
-# print(qq.shape)
-sw = striding_window(np.arange(15), 3, 2, num_windows=4)
-print(sw)
+def do_some_tests():
+    N = 10000000
+    n_samples_window = 128; n_overlap = 96; n_advance = n_samples_window-n_overlap;
+    #qq = np.random.random(N)
+    qq = np.arange(N)
+    windowing_scheme = WindowingScheme(num_samples_window=n_samples_window, num_samples_overlap=n_overlap)
+    print(windowing_scheme.num_samples_advance)
+    print(windowing_scheme.available_number_of_windows(N))
+    # print(qq.shape)
+    # qq = np.atleast_2d(qq)
+    # print(qq.shape)
+    sw = striding_window(np.arange(15), 3, 2, num_windows=4)
+    print(sw)
 
-t0 = time.time()
-strided_window = striding_window(1.*np.arange(N), n_samples_window, n_advance)#, num_windows=4)
-strided_window+=1
-print("stride {}".format(time.time()-t0))
+    t0 = time.time()
+    strided_window = striding_window(1.*np.arange(N), n_samples_window, n_advance)#, num_windows=4)
+    strided_window+=1
+    print("stride {}".format(time.time()-t0))
 
-print(strided_window)
+    print(strided_window)
 
-t0 = time.time()
-slid_window = sliding_window_crude(1.*np.arange(N),n_samples_window, n_advance)#, num_windows=4)
-slid_window+=1
-print("crude  {}".format(time.time()-t0))
+    t0 = time.time()
+    slid_window = sliding_window_crude(1.*np.arange(N),n_samples_window, n_advance)#, num_windows=4)
+    slid_window+=1
+    print("crude  {}".format(time.time()-t0))
 
-print(slid_window)
+    print(slid_window)
 
-num_windows = windowing_scheme.available_number_of_windows(N)
-print(num_windows)
-t0 = time.time()
-numba_slid_window = sliding_window_numba(1.*np.arange(N),n_samples_window, n_advance,
-                           num_windows)#, num_windows=4)
-numba_slid_window+=1
-print("numba  {}".format(time.time()-t0))
+    num_windows = windowing_scheme.available_number_of_windows(N)
+    print(num_windows)
+    t0 = time.time()
+    numba_slid_window = sliding_window_numba(1.*np.arange(N),n_samples_window, n_advance,
+                               num_windows)#, num_windows=4)
+    numba_slid_window+=1
+    print("numba  {}".format(time.time()-t0))
 
-t0 = time.time()
-numba_slid_window = sliding_window_numba(1.*np.arange(N),n_samples_window, n_advance,
-                           num_windows)#, num_windows=4)
-print("numba  {}".format(time.time()-t0))
-#sw0 = sliding_window(qq, n_samples_window, n_overlap, num_windows=windowing_scheme.available_number_of_windows(len(qq)))
-sw = sliding_window(qq, n_samples_window, n_overlap)
+    t0 = time.time()
+    numba_slid_window = sliding_window_numba(1.*np.arange(N),n_samples_window, n_advance,
+                               num_windows)#, num_windows=4)
+    print("numba  {}".format(time.time()-t0))
+    #sw0 = sliding_window(qq, n_samples_window, n_overlap, num_windows=windowing_scheme.available_number_of_windows(len(qq)))
+    sw = sliding_window(qq, n_samples_window, n_overlap)
 
 
-print("dogs")
+
+def main():
+    do_some_tests()
+    print("Fin")
+
+
+if __name__ == "__main__":
+    main()
+
+
 
