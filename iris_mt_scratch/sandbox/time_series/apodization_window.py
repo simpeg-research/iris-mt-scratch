@@ -17,13 +17,31 @@ scipy.signal.get_window()
       'chebwin' : 'attenuation'
     }
 
+The Taper Config has 2 possible forms:
+1. Standard form: ["family", "length", "additional_args"]
+
+Example 1
+"family" = "hamming"
+"length" = 128
+"additional_args" = {}
+
+Example 2
+"family" = "kaiser"
+"length" = 64
+"additional_args" = {"beta":8}
+2. user-defined: ["family", "array"]
+In this case length is defined by the array.
+"family" = "user-defined"
+"array" = [1, 2, 3, 4, 5, 4, 3, 2, 1]
 
 
 """
+# import iris_mt_scratch.logging_util import init_logging
+# logger = init_logging(__name__,module_name = 'aurora.time_series.taper')
 
+import logging
 import numpy as np
 import scipy.signal as ssig
-
 
 
 class ApodizationWindow():
@@ -68,7 +86,7 @@ class ApodizationWindow():
         self.family = kwargs.get('family', '')
         self.length = kwargs.get('length', -1)
         self.taper = kwargs.get('array', np.empty(0))
-        self.additional_parameters = kwargs.get('additional_parameters', None)
+        self.additional_args = kwargs.get('additional_args', {})
         self.coherent_gain = None
         self.NENBW = None
         self.S1 = None
@@ -78,13 +96,13 @@ class ApodizationWindow():
         #here are some conditions for making taper
         condition_1 = len(self.family) != 0
         condition_2 = self.length != -1
-        condition_3 = self.taper.size > 0
+        condition_3 = self.taper.size == 0
 
         if (condition_1 and condition_2 and condition_3):
             self.make()
         elif (not condition_3):
             # user defined taper.
-            logger.info("user defined taper being initiated")
+            logging.info("user defined taper being initiated")
             if (self.length == -1):
                 self.length = len(self.taper)
             if (self.family == ''):
@@ -97,22 +115,21 @@ class ApodizationWindow():
         if self.taper is not None
         @rtype: str
         """
-        return f"{self.family} {self.length} {bool(self.taper)}"
+        return f"{self.family} {self.length} taper_exists={bool(self.taper.any())}"
 
 
     def make(self):
         """
-
         @note: see scipy.signal.get_window for a description of what is
         expected in args[1:]. http://docs.scipy.org/doc/scipy/reference/
         generated/scipy.signal.get_window.html
+
+        note: this is just repackaging the args so
         """
-        if self.family == 'slepian':
-            logger.error("This is not yet supported but exists in karl/unstable")
-            raise Exception
-            self.taper = slepian(self.length)
-        else:
-            self.taper = ssig.get_window(self.family, self.length)
+        window_args = [v for k,v in self.additional_args.items()]
+        window_args.insert(0, self.family)
+        window_args = tuple(window_args)
+        self.taper = ssig.get_window(window_args, self.length)
 
         return
 
@@ -146,6 +163,12 @@ def test_can_inititalize_apodization_window():
     """
     """
     apodization_window = ApodizationWindow(family='hamming', length=128)
+    print(apodization_window)
+    apodization_window = ApodizationWindow(family='blackmanharris', length=256)
+    print(apodization_window)
+    apodization_window = ApodizationWindow(family='kaiser', length=128, additional_args={"beta":8})
+    print(apodization_window)
+    apodization_window = ApodizationWindow(family='slepian', length=64, additional_args={"width":0.3})
     print(apodization_window)
     pass
 
