@@ -30,15 +30,18 @@ Example 2
 "length" = 64
 "additional_args" = {"beta":8}
 
-2. user-defined: ["family", "array"]
+2. user-defined: ["array"]
 In this case length is defined by the array.
-"family" = "user-defined"
 "array" = [1, 2, 3, 4, 5, 4, 3, 2, 1]
 
-TODO: This is not quite satisfying, because the user-defined taper may want to have
-a "family" label ... so it is probably better to have array be empty all the time
-and when it is not empty that implies user defined-ness.  In that case
+If "array" is non-empty then the assumption is that we are in the user defined case.
 
+It is a little bit unsatisfying that the args need to be ordered for scipy.signal.get_window().
+It is suggested that you use OrderedDict() for any windows that have more than one additional args.
+
+For example
+"family" = 'general_gaussian'
+"additional_args" = OrderedDict("power":1.5, "sigma":7)
 
 """
 # import iris_mt_scratch.logging_util import init_logging
@@ -77,8 +80,11 @@ class ApodizationWindow():
     flat-top windows.  G. Heinzel, A. Roudiger and R. Schilling, Max-Planck
     Institut fur Gravitationsphysik (Albert-Einstein-Institut)
     Teilinstitut Hannover February 15, 2002
+    See Also
+    [2] Harris FJ. On the use of windows for harmonic analysis with the discrete
+    Fourier transform. Proceedings of the IEEE. 1978 Jan;66(1):51-83.
 
-    Handles case of user-defined taper being assigned in cond
+
     Instantiate an apodization window object.
     """
     def __init__(self, **kwargs):
@@ -123,7 +129,7 @@ class ApodizationWindow():
         expected in args[1:]. http://docs.scipy.org/doc/scipy/reference/
         generated/scipy.signal.get_window.html
 
-        note: this is just repackaging the args so
+        note: this is just repackaging the args so that scipy.signal.get_window() accepts all cases.
         """
         window_args = [v for k,v in self.additional_args.items()]
         window_args.insert(0, self.family)
@@ -133,23 +139,13 @@ class ApodizationWindow():
         return
 
 
-    def custom_make(self, window_coefficients, **kwargs):
-        self.family = kwargs.get('label', None)
-        self.taper = window_coefficients
-        self.length = len(window_coefficients)
-        return
-
     @property
     def calc_apodization_factor(self):
-        self.S1 = sum(self.taper)
-        self.S2 = sum(self.taper**2);
-        self.nenbw = self.coherent_gain = 0.0
-        if (self.length != 0):
-            self.coherent_gain = self.S1/self.length
-        if (self.S1 != 0):
-            self.nenbw = self.length*self.S2/(self.S1**2)
-        if (self.nenbw is not None) and (self.coherent_gain is not None):
-            self._apodization_factor = np.sqrt(self.nenbw)*self.coherent_gain
+        S1 = sum(self.taper)
+        S2 = sum(self.taper**2);
+        self.coherent_gain = S1 / self.length
+        self.nenbw = self.length*S2/(S1**2)
+        self._apodization_factor = np.sqrt(self.nenbw)*self.coherent_gain
         return
 
     @property
@@ -162,7 +158,7 @@ def test_can_inititalize_apodization_window():
     """
     """
     apodization_window = ApodizationWindow(family='hamming', length=128)
-    print(apodization_window)
+    print(apodization_window, "window factor=",apodization_window.apodization_factor)
     apodization_window = ApodizationWindow(family='blackmanharris', length=256)
     print(apodization_window)
     apodization_window = ApodizationWindow(family='kaiser', length=128, additional_args={"beta":8})
