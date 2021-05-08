@@ -67,7 +67,7 @@ class ApodizationWindow():
         """
         self.family = kwargs.get('family', '')
         self.length = kwargs.get('length', -1)
-        self.taper = kwargs.get('array', None)
+        self.taper = kwargs.get('array', np.empty(0))
         self.additional_parameters = kwargs.get('additional_parameters', None)
         self.coherent_gain = None
         self.NENBW = None
@@ -78,7 +78,7 @@ class ApodizationWindow():
         #here are some conditions for making taper
         condition_1 = len(self.family) != 0
         condition_2 = self.length != -1
-        condition_3 = self.taper is None
+        condition_3 = self.taper.size > 0
 
         if (condition_1 and condition_2 and condition_3):
             self.make()
@@ -113,7 +113,6 @@ class ApodizationWindow():
             self.taper = slepian(self.length)
         else:
             self.taper = ssig.get_window(self.family, self.length)
-        #self.calc_apodization_factor()
 
         return
 
@@ -122,7 +121,6 @@ class ApodizationWindow():
         self.family = kwargs.get('label', None)
         self.taper = window_coefficients
         self.length = len(window_coefficients)
-        #self.calc_apodization_factor()
         return
 
     @property
