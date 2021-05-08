@@ -10,6 +10,10 @@ plt.ioff()
 file_basename = '3914.csv'
 folder = "/home/kkappler/Documents/IRIS_MT/calibration_files/from_andy_08_april"
 file_path = os.path.join(folder, file_basename)
+#andy_file_path = os.path.join(folder, '3914_andy.csv')
+df_andy = pd.read_csv(os.path.join(folder, '3914_andy.csv'))
+df_paul = pd.read_csv(os.path.join(folder, '3914_paul.csv'))
+df_karl = pd.read_csv(os.path.join(folder, '3914_karl.csv'))
 
 df = pd.read_csv(file_path)
 df['phase'] = df['phase']/1000.0#radians
@@ -37,6 +41,9 @@ fig, ax = plt.subplots(nrows=2, sharex=True)
 ax[0].semilogx(f, ampl)
 ax[0].semilogx(f_base, ampl_base, 'ro', label='base $f$')
 ax[0].semilogx(f_harmonic, ampl_harmonic, 'bo', label='harmonic $f$')
+ax[0].semilogx(df_andy["freq"], df_andy["amp"], 'k', label='andy')
+ax[0].semilogx(df_paul["freq"], df_paul["amp"], 'b*', label='paul', markersize=14)
+ax[0].semilogx(df_karl["freq"], df_karl["amp"], 'co', label='karl')
 ax[0].set_ylabel("Amplitude $\mu$V/nT ")
 ax[0].grid(True, which="both")
 ax[0].legend()

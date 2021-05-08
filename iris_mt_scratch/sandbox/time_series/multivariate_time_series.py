@@ -8,6 +8,19 @@ Time Handling should support:
 -pd.TimeDeltaIndex: Immutable ndarray of timedelta64 data, represented internally as int64, and which can be boxed to timedelta objects.
 -pd.DateTimeIndex: Represented internally as int64, and which can be boxed to Timestamp objects that are subclasses of datetime and carry metadata.
 
+
+OK, so when an MVTS operates, we can do one of two ways: channel by channel, or "en-masse".  It is highly
+likely that xarray will provide the capability to do "en-masse" functions, for window, taper, fft,
+BUT in the interests of training_wheels_to_xarray, I suggest we first implement in a way that runs
+channel-by-channel.
+
+However, I think, lets try to use xarray here, ever for the channel-by-channel approach.
+
+That way a univariate time series is just an MVTS with only a single channel.
+
+Then a method MVTS.merge_channels() should be able to bring everything back.
+
+
 """
 
 import matplotlib.pyplot as plt
@@ -16,6 +29,13 @@ import pandas as pd
 import time
 import xarray as xr
 
+class WindowedMultiVariateTimeSeries(MultiVariateTimeSeries):
+    """
+    This class is like a measurand whose parent is a time series ... full multivariate implementation looks
+    like it may
+    """
+    def __init__(self):
+        self.attribute = None
 
 class MultiVariateTimeSeries(object):
     """
@@ -37,37 +57,76 @@ class MultiVariateTimeSeries(object):
 
     def __init__(self, **kwargs):
         kwargs = self.validate_kwargs(**kwargs)
-        self.sampling_rate = kwargs.get('sps', None)
-        self.t0 = kwargs.get('t0', None)
-        self.data = kwargs.get('data', None)
-        self.xarray = kwargs.get('xarray', None)
-        self.dims = kwargs.get('dims', [])
-        # if self.data is not None:
-        self._duration = kwargs.get('duration', None)
-        # self.data
+        self.sampling_rate = kwargs.get('sampling_rate', None)
+        self.xarray = kwargs.get('xarray', None) #NEW
+        self.metadata = kwargs.get('metadata', None) #NEW key it with the xarray channel labels
 
-        self._time_vector = None
+        self.data = kwargs.get('data', None)  #OLD
+        self.dims = kwargs.get('dims', []) #OLD
+        self.t0 = kwargs.get('t0', None) #OLD: replace with property returns earliest timestamp in xarray
+        self._duration = kwargs.get('duration', None) #OLD replace with @property len(data)*dt
+        self.metadata = kwargs.get('metadata', None)
+        self._time_vector = None #OLD: replace with reference to time-axis of xarray
 
         if self.data is not None:
             pass
+
+    @property
+    def channel_labels(self):
+        return list(self.xarray.channel.values)
+    
+
+    @property
+    def sampling_rate(self):
+        return self.xarray.meta_dict['sampling_rate']
+
+    def channel(self, channel_label):
+        """
+        This currently returns the channel data ... do we want to return an xarray with the embedded metadata?
+
+        Parameters
+        ----------
+        channel_label
+
+        Returns
+        -------
+
+        """
+        return self.xarray.loc[:,channel_label]
+
+
+    def apply_windowing_scheme(self, windowing_scheme):
+        """:
+        Returns an xarray ... hmm, or maybe another instance of self ... or better yet a "time domain instance"
+        of STFT ... that would be best ... where STFT is typically the container for frequency domain data
+
+        For now we will do this channel by channel ...
+        """
+        for channel_id in self.channel_labels:
+            channel_data = self.channel(channel_id)
+            windowed_data = 
+
+    def apply_windowing_channel(self, channel_label):
+        pass
 
     # def cast_data_to_xarray(self):
     #     qxr = xr.DataArray(qq[frequency_columns].values,
     #                        dims=('k', 'frequency'),
     #                        coords={'k': qq.k.values, 'frequency': frequency_bands})
 
-    # def validate_kwargs(self, **kwargs):
-    #     """
-    #     check for duplicate definintions, e.g. (sps & dt), (data & duration),
-    #
-    #     Parameters
-    #     ----------
-    #     kwargs
-    #
-    #     Returns
-    #     -------
-    #
-    #     """
+    def validate_kwargs(self, **kwargs):
+        """
+        check for duplicate definintions, e.g. (sps & dt), (data & duration),
+
+        Parameters
+        ----------
+        kwargs
+
+        Returns
+        -------
+
+        """
+        return kwargs
     #     #<sps, dt handler>
     #     sps = kwargs.get('sps', None)
     #     dt = kwargs.get('dt', None)
@@ -223,7 +282,7 @@ def test_generate_time_axis(t0, n_samples, sampling_rate):
 
 
 
-def test_multivariate_time_series():
+def test_initialize_multivariate_time_series():
     n_samples = int(1e3); n_ch = 3#works for n_ch=1
     channel_labels = ["Hx", "Hy", "Hz"]
     sampling_rate = 3.0 #Hz
@@ -240,13 +299,23 @@ def test_multivariate_time_series():
     hx = xrd.loc[:, 'Hx']
 
     #</DATA ACCESS>
-    #pd.DatetimeIndex()
-    #t0 = np.daa.Timestamp(2021, 4, 4, 14, 20, 44)
-#    time_axis = pd.date_range(t0, periods=10, freq=1.0)
-
-    mvts = MultiVariateTimeSeries(sps=10.0, data=np.random.randn(111))
+    mvts = MultiVariateTimeSeries(sampling_rate=sampling_rate, xarray=xrd)
     return mvts
+    
+#     print("ok")
+#     #pd.DatetimeIndex()
+#     #t0 = np.daa.Timestamp(2021, 4, 4, 14, 20, 44)
+# #    time_axis = pd.date_range(t0, periods=10, freq=1.0)
+# 
+#     mvts = MultiVariateTimeSeries(sps=10.0, data=np.random.randn(111))
+#     return mvts
 
+
+def test_apply_windowing_to_mvts():
+    mvts = test_initialize_multivariate_time_series()
+    from iris_mt_scratch.sandbox.time_series.windowing_scheme_aurora import WindowingScheme
+    windowing_scheme = WindowingScheme(num_samples_window=128, num_samples_overlap=64, taper='hamming')
+    
 
 def main():
     ts = test_multivariate_time_series()
