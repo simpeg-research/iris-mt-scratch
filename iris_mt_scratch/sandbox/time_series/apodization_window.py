@@ -99,7 +99,7 @@ class ApodizationWindow():
         self.taper = kwargs.get('array', np.empty(0))
         self.additional_args = kwargs.get('additional_args', {})
         self.coherent_gain = None
-        self.NENBW = None
+        self.nenbw = None
         self.S1 = None
         self.S2 = None
         self._apodization_factor = None
@@ -107,14 +107,21 @@ class ApodizationWindow():
         if self.taper.size==0:
             self.make()
 
+    @property
+    def summary(self):
+        """
+        Returns a string comprised of the family, length, and True/False if self.taper is not None
+        -------
+
+        """
+        string1 = f"{self.family} {self.length} taper_exists={bool(self.taper.any())}"
+        string2 = f"NENBW:{self.nenbw}, CG:{self.coherent_gain} window factor={self.apodization_factor}"
+        return "\n".join([string1, string2])
 
     def __str__(self):
         """
-        Returns a string comprised of the family, length, and True/False
-        if self.taper is not None
-        @rtype: str
         """
-        return f"{self.family} {self.length} taper_exists={bool(self.taper.any())}"
+        return f"{self.taper}"
 
     @property
     def length(self):
@@ -158,13 +165,15 @@ def test_can_inititalize_apodization_window():
     """
     """
     apodization_window = ApodizationWindow(family='hamming', length=128)
-    print(apodization_window, "window factor=",apodization_window.apodization_factor)
+    print(apodization_window.summary)
+    #print(apodization_window)
     apodization_window = ApodizationWindow(family='blackmanharris', length=256)
-    print(apodization_window)
+    print(apodization_window.summary)
     apodization_window = ApodizationWindow(family='kaiser', length=128, additional_args={"beta":8})
-    print(apodization_window)
+    print(apodization_window.summary)
     apodization_window = ApodizationWindow(family='slepian', length=64, additional_args={"width":0.3})
-    print(apodization_window)
+    print(apodization_window.summary)
+    # print(apodization_window)
     pass
 
 def main():
