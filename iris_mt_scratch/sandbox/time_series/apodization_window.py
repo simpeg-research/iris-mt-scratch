@@ -44,7 +44,8 @@ For example
 "additional_args" = OrderedDict("power":1.5, "sigma":7)
 
 
-TODO: decide if self.length should be self.num_samples_window.  If so it should probably be changed in the
+TODO: decide if "family" should be "taper_family"
+
 config to be called num_samples
 """
 # import iris_mt_scratch.logging_util import init_logging
@@ -97,7 +98,7 @@ class ApodizationWindow(object):
         ----------
         kwargs
         """
-        self.family = kwargs.get('family', '')
+        self.family = kwargs.get('family', 'boxcar')
         self._num_samples_window = kwargs.get('num_samples_window', 0)
         self.taper = kwargs.get('array', np.empty(0))
         self.additional_args = kwargs.get('additional_args', {})
@@ -167,6 +168,8 @@ class ApodizationWindow(object):
 def test_can_inititalize_apodization_window():
     """
     """
+    apodization_window = ApodizationWindow(num_samples_window=4)
+    print(apodization_window.summary)
     apodization_window = ApodizationWindow(family='hamming', num_samples_window=128)
     print(apodization_window.summary)
     #print(apodization_window)
