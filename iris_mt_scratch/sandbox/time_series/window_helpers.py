@@ -10,7 +10,7 @@ from numba import jit
 
 #from windowing_scheme_aurora import WindowingScheme
 
-
+#<WINDOW - TIME SERIES RELATIONSHIP>
 def available_number_of_windows_in_array(n_samples_array, n_samples_window, n_advance):
     """
 
@@ -30,10 +30,10 @@ def available_number_of_windows_in_array(n_samples_array, n_samples_window, n_ad
         raise Exception
     available_number_of_strides = int(np.floor(stridable_samples / n_advance))
     return available_number_of_strides + 1
+#</WINDOW - TIME SERIES RELATIONSHIP>
 
 
-
-#<OPERATORS>
+#<SLIDING WINDOW OPERATORS>
 def sliding_window_crude(data, num_samples_window, num_samples_advance, num_windows=None):
     """
 
@@ -49,25 +49,13 @@ def sliding_window_crude(data, num_samples_window, num_samples_advance, num_wind
 
     """
     if num_windows is None:
-        #Take this from windowing_scheme
-        num_windows = int(np.floor((len(data)-num_samples_window)/num_samples_advance))+1
-        print("num_windows", num_windows)
+        num_windows = available_number_of_windows_in_array(len(data), num_samples_window, num_samples_advance)
     output_array = np.full((num_windows, num_samples_window), np.nan)
     for i in range(num_windows):
         output_array[i, :] = data[i*num_samples_advance:i*num_samples_advance+num_samples_window]
 
     return output_array
 
-# x = np.arange(100).reshape(10, 10)
-#
-# @jit(nopython=True) # Set "nopython" mode for best performance, equivalent to @njit
-# def go_fast(a): # Function is compiled to machine code when called the first time
-#     trace = 0.0
-#     for i in range(a.shape[0]):   # Numba likes loops
-#         trace += np.tanh(a[i, i]) # Numba likes NumPy functions
-#     return a + trace              # Numba likes NumPy broadcasting
-#
-# print(go_fast(x))
 
 @jit
 def sliding_window_numba(data, num_samples_window, num_samples_advance, num_windows):
@@ -103,6 +91,8 @@ def striding_window(data, num_samples_window, num_samples_advance, num_windows=N
     we cannot guarantee that another user may not add methods that do require copies.  For robustness
     we will use 1d implementation only for now.  Adding 2d is experimental.
 
+    Another clean example of this method can be found in the razorback codes from brgm.
+
     result is 2d: result[i] is the i-th window
 
     >>> sliding_window(np.arange(15), 4, 3, 2)
@@ -114,11 +104,8 @@ def striding_window(data, num_samples_window, num_samples_advance, num_windows=N
     """
     print("num_samples_advance", num_samples_advance)
     if num_windows is None:
-        #Take this from windowing_scheme
-        num_windows = int(np.floor((len(data)-num_samples_window)/num_samples_advance))+1
-        print("num_windows", num_windows)
+        num_windows = available_number_of_windows_in_array(len(data), num_samples_window, num_samples_advance)
     min_ = (num_windows - 1) * num_samples_advance + num_samples_window
-    assert len(data) >= min_, "array is too small (min=%d)" % min_
     bytes_per_element = data.itemsize
     output_shape = (num_windows, num_samples_window)
     print("output_shape", output_shape)
@@ -128,7 +115,21 @@ def striding_window(data, num_samples_window, num_samples_advance, num_windows=N
     strided_window = as_strided(data, shape=output_shape,
                                 strides=strides_shape)#, writeable=False)
     return strided_window
-#</OPERATORS>
+#</SLIDING WINDOW OPERATORS>>
+
+SLIDING_WINDOW_FUNCTIONS = {
+    "crude" : sliding_window_crude, 
+    "numba" : sliding_window_numba,
+    "stride": striding_window
+}
+# SLIDING_WINDOW_FUNCTIONS["crude"] = sliding_window_crude
+# SLIDING_WINDOW_FUNCTIONS["numba"] = sliding_window_numba
+# SLIDING_WINDOW_FUNCTIONS["stride"] = striding_window
+
+
+
+
+
 
 
 def do_some_tests():

@@ -30,8 +30,12 @@ import numpy as np
 import copy
 
 from iris_mt_scratch.sandbox.time_series.apodization_window import ApodizationWindow
+
 #from iris_mt_scratch.sandbox.time_series.window_helpers import sliding_window
 from iris_mt_scratch.sandbox.time_series.window_helpers import available_number_of_windows_in_array
+from iris_mt_scratch.sandbox.time_series.window_helpers import SLIDING_WINDOW_FUNCTIONS
+
+
 #number_of_available_windows_in_array
 
 
@@ -50,6 +54,7 @@ class WindowingScheme(ApodizationWindow):
     def __init__(self, **kwargs):
         super(WindowingScheme, self).__init__(**kwargs)
         self.num_samples_overlap = kwargs.get("num_samples_overlap", None)
+        self.striding_function_label = kwargs.get("striding_function_label", "crude")
 
         # self.num_samples_data = kwargs.get("num_samples_data", None)
         #self.sampling_rate = kwargs.get('sampling_rate', None)
@@ -154,7 +159,8 @@ class WindowingScheme(ApodizationWindow):
         -------
 
         """
-        reshaped_data = sliding_window(data, self.num_samples_window, self.num_samples_advance)
+        sliding_window_function = SLIDING_WINDOW_FUNCTIONS[self.striding_function_label]
+        reshaped_data = sliding_window_function(data, self.num_samples_window, self.num_samples_advance)
         return reshaped_data
 
 
@@ -174,6 +180,13 @@ def main():
     windowing_scheme = WindowingScheme(num_samples_window=64, num_samples_overlap=50)
     print(windowing_scheme.num_samples_advance)
     print(windowing_scheme.available_number_of_windows(N))
+    qq = np.random.random(N)
+    ww = windowing_scheme.apply_sliding_window(qq)
+
+    qq = np.arange(15)
+    windowing_scheme = WindowingScheme(num_samples_window=3, num_samples_overlap=1)
+    ww = windowing_scheme.apply_sliding_window(qq)
+    print(ww)
     print("finito")
 
 if __name__ == "__main__":
