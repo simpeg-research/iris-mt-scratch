@@ -30,8 +30,9 @@ import numpy as np
 import copy
 
 from iris_mt_scratch.sandbox.time_series.apodization_window import ApodizationWindow
-from iris_mt_scratch.sandbox.time_series.window_helpers import sliding_window
-
+#from iris_mt_scratch.sandbox.time_series.window_helpers import sliding_window
+from iris_mt_scratch.sandbox.time_series.window_helpers import available_number_of_windows_in_array
+#number_of_available_windows_in_array
 
 
 class WindowingScheme(ApodizationWindow):
@@ -157,26 +158,6 @@ class WindowingScheme(ApodizationWindow):
         return reshaped_data
 
 
-#Move this to helper functions
-def available_number_of_windows_in_array(n_samples_array, n_samples_window, n_advance):
-    """
-
-    Parameters
-    ----------
-    n_samples_array
-    n_samples_window
-    n_advance
-
-    Returns
-    -------
-
-    """
-    stridable_samples = n_samples_array - n_samples_window
-    if stridable_samples < 0:
-        print("Window is longer than the time series")
-        raise Exception
-    available_number_of_strides = int(np.floor(stridable_samples / self.n_advance))
-    return available_number_of_strides + 1
 
 
 def main():
@@ -188,6 +169,11 @@ def main():
     print(ws.window_duration)
     print("@ToDo Insert an integrated test showing common usage of sliding window\
     for 2D arrays, for example windowing for dnff")
+
+    N = 10000
+    windowing_scheme = WindowingScheme(num_samples_window=64, num_samples_overlap=50)
+    print(windowing_scheme.num_samples_advance)
+    print(windowing_scheme.available_number_of_windows(N))
     print("finito")
 
 if __name__ == "__main__":
