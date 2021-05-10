@@ -6,23 +6,24 @@ The windowing scheme defines the chunking and chopping of the time series for th
 It is often referred to as a "sliding window" or a "striding window".  It is basically a taper with a rule
 to say how far to advance at each stride (or step).
 
-All we really need is a window length and an overlap (or equivalently an advance).  We normally descibe
-sliding windows in terms of overlap but we code in terms of "window_advance".
-
+To generate an array of windows we only need window length and an overlap (or equivalently an advance).  We
+normally descibe sliding windows in terms of overlap but we code in terms of "window_advance".
 
 Note that choices of window length (L) and overlap (V)  are usually made with some knowledge of
 time series sampling rate, duration, and the frequency band of interest.  We can create a module
 that "suggests" L, V, based on these metadata to make the default processing configuration parameters.
 
 Note: In general we will need one instance of this class per decimation level, but in the current
-implementation we will probably leave it fixed.
+implementation we will probably leave the windowing scheme the same for each decimation level.
 
 This class is a key part of the "gateway" to frequency domain, so what frequency domain considerations do we want to
 think about here.. certainly the window length and the sampling rate define the frequency resolution, and as such should
 be considered in context of the "band averaging scheme"
 
-Indeed the frequencies come from this class if it has a sampling rate ...
-or should we push the frequency stuffs to a combination of TS plus WindowingScheme?  THe latter feels more appropriate.
+Indeed the frequencies come from this class if it has a sampling rate.  While sampling rate is a property
+ of the data, and not the windowing scheme per se, it is good for this class to be aware of the sampling
+ rate.  ... or should we push the frequency stuffs to a combination of TS plus WindowingScheme?
+ The latter feels more appropriate.
 
 """
 
@@ -67,6 +68,10 @@ class WindowingScheme(ApodizationWindow):
         return copy.deepcopy(cls)
 
     @property
+    def __str__(self):
+        return "Window of {} samples with overlap {}".format(self.num_samples_window, self.num_samples_overlap)
+
+    @property
     def num_samples_advance(self):
         """
         Attributes derived property that actually could be fundamental .. if we defined this we would wind up deriving
@@ -92,35 +97,28 @@ class WindowingScheme(ApodizationWindow):
                                                                            self.num_samples_advance)
         return available_number_of_windows
 
+    def apply_sliding_window(self, data):
+        """
 
+        Parameters
+        ----------
+        data
 
+        Returns
+        -------
 
-#     @property
-#     def window_edge_indices(self):
-# #    def _compute_edge_indices(self):
-#         """
-#         2021: based on qf implementation ... trims so that all windows are not truncated ... the issue is that the
-#         window as it advances will not normally land right at the end of the data ... so we lose a few points sometimes ...
-#         TODO: raise a logger message when some data is ignored becuase of this
-#         TODO: dictionarify this so that its self.edges["left"],self.edges["right"], de-qf it
-#         TODO: Test an implementation of windowing that is based on numba and uses simple for looping
-#         """
-#         if self.num_samples_window > self.num_samples_data:
-#             raise Exception("Data duration less than window duration")
-#         self.left_indices = np.arange(0, self.num_samples_data, self.window_advance)
-#         self.right_indices = self.left_indices + self.window_length
-#         self.left_indices = self.left_indices[self.right_indices <= self.num_samples_data]
-#         self.right_indices = self.right_indices[0:len(self.left_indices)]
+        """
+        sliding_window_function = SLIDING_WINDOW_FUNCTIONS[self.striding_function_label]
+        reshaped_data = sliding_window_function(data, self.num_samples_window, self.num_samples_advance)
+        return reshaped_data
 
+    @property
+    def window_edge_indices(self):
+        """This has been useful in the past but maybe not needed here"""
+        pass
 
-    # @property
-    # def num_windows(self):
-    #     """
-    #     Calculate number of windows
-    #     """
-    #     return len(self.left_edge_indices)
-
-
+#<PROPERTIES THAT NEED SAMPLING RATE>
+#these may be moved elsewhere later
     @property
     def dt(self):
         """
@@ -135,33 +133,17 @@ class WindowingScheme(ApodizationWindow):
         """
         return self.num_samples_window*self.dt
 
-
-
     def duration_advance(self):
         """
         """
         return self.num_samples_advance*self.dt
 
 
-    @property
-    def __str__(self):
-        return "Window of {} samples with overlap {}".format(self.num_samples_window, self.num_samples_overlap)
+#</PROPERTIES THAT NEED SAMPLING RATE>
 
 
-    def apply_sliding_window(self, data):
-        """
-        
-        Parameters
-        ----------
-        data
 
-        Returns
-        -------
 
-        """
-        sliding_window_function = SLIDING_WINDOW_FUNCTIONS[self.striding_function_label]
-        reshaped_data = sliding_window_function(data, self.num_samples_window, self.num_samples_advance)
-        return reshaped_data
 
 
 

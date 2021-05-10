@@ -129,6 +129,35 @@ SLIDING_WINDOW_FUNCTIONS = {
 
 
 
+def check_that_all_sliding_window_functions_return_equivalent_arrays():
+    """
+    simple sanity check that runs each sliding window function on a small array and confirms the results
+    are numerically identical.
+    Note that striding window will return int types where others return float.
+    Returns
+    -------
+
+    """
+
+    N = 15
+    L = 3
+    V = 1
+    O = L-V
+    data = np.arange(N)
+    n_win = available_number_of_windows_in_array(N,L,O)
+    results = {}
+    for function_label, function in SLIDING_WINDOW_FUNCTIONS.items():
+        results[function_label] = function(data, L, O, n_win)
+        print(results[function_label])
+
+    for i, function_label in enumerate(results.keys()):
+        if i == 0:
+            reference_result = results[function_label]
+        else:
+            difference = reference_result - results[function_label]
+            if np.sum(np.abs(difference)) == 0:
+                print(f"OK {i}")
+
 
 
 
@@ -176,6 +205,7 @@ def do_some_tests():
 
 
 def main():
+    check_that_all_sliding_window_functions_return_equivalent_arrays()
     do_some_tests()
     print("Fin")
 
