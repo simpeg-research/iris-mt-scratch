@@ -44,6 +44,10 @@ When 2D arrays are generated how should we index them?
 
  Try making it an xarray.
  </20210510>
+
+There is an open trade here about wheter to embed the data length as an ivar or a variable we pass.
+i.e. whether the same windowing scheme is independent of the data length or not.
+
 """
 
 import copy
@@ -76,7 +80,7 @@ class WindowingScheme(ApodizationWindow):
         super(WindowingScheme, self).__init__(**kwargs)
         self.num_samples_overlap = kwargs.get("num_samples_overlap", None)
         self.striding_function_label = kwargs.get("striding_function_label", "crude")
-
+        self._left_hand_window_edge_indices = None
         # self.num_samples_data = kwargs.get("num_samples_data", None)
         #self.sampling_rate = kwargs.get('sampling_rate', None)
         #self.taper = ApodizationWindow(**kwargs)
@@ -117,7 +121,8 @@ class WindowingScheme(ApodizationWindow):
                                                                            self.num_samples_advance)
         return available_number_of_windows
 
-    def apply_sliding_window(self, data, time_vector=None, dt=None):
+    def apply_sliding_window(self, data, time_vector=None, dt=None,
+                             return_xarry=False):
         """
 
         Parameters
@@ -132,36 +137,53 @@ class WindowingScheme(ApodizationWindow):
         """
         sliding_window_function = SLIDING_WINDOW_FUNCTIONS[self.striding_function_label]
         reshaped_data = sliding_window_function(data, self.num_samples_window, self.num_samples_advance)
-        print("test casting to xarray here")
 
-        #<Get window_time_axis coordinate>
-        self.compute_window_edge_indices(len(data))
-        lhwe = self.left_hand_window_edge_indices
-        if time_vector is None:
-            time_vector = np.arange(len(data))
-        multiple_window_time_axis = time_vector[lhwe]
-        #</Get window_time_axis coordinate>
+        #<FACTOR TO ANOTHER METHOD>
+        if return_xarry:
+            print("test casting to xarray here")
 
-        #<Get within-window_time_axis coordinate>
-        if dt is None:
-            print("Warning dt not defined, using dt=1")
-            dt = 1.0
-        within_window_time_axis = dt*np.arange(self.num_samples_window)
-        #<Get within-window_time_axis coordinate>
+            #<Get window_time_axis coordinate>
+            if time_vector is None:
+                time_vector = np.arange(len(data))
+            multiple_window_time_axis = self.downsample_time_axis(time_vector)
+            #</Get window_time_axis coordinate>
 
-        #<Cast to xarray>
-        xrd = xr.DataArray(reshaped_data, dims=["time", "within-window time"],
-                           coords={"within-window time": within_window_time_axis,
-                                   "time": multiple_window_time_axis})
-        #</Cast to xarray>
-        return reshaped_data
+            #<Get within-window_time_axis coordinate>
+            if dt is None:
+                print("Warning dt not defined, using dt=1")
+                dt = 1.0
+            within_window_time_axis = dt*np.arange(self.num_samples_window)
+            #<Get within-window_time_axis coordinate>
+
+            #<Cast to xarray>
+            xrd = xr.DataArray(reshaped_data, dims=["time", "within-window time"],
+                               coords={"within-window time": within_window_time_axis,
+                                       "time": multiple_window_time_axis})
+            #</Cast to xarray>
+            return xrd
+        #</FACTOR TO ANOTHER METHOD>
+        else:
+            return reshaped_data
+
+    def xarray_sliding_window(self, data, time_vector=None, dt=None):
+        pass
 
     def compute_window_edge_indices(self, num_samples_data):
         """This has been useful in the past but maybe not needed here"""
         number_of_windows = self.available_number_of_windows(num_samples_data)
-
-        self.left_hand_window_edge_indices= np.arange(number_of_windows)*self.num_samples_advance
+        self._left_hand_window_edge_indices= np.arange(number_of_windows)*self.num_samples_advance
         return
+
+    def left_hand_window_edge_indices(self, num_samples_data):
+        if self._left_hand_window_edge_indices is None:
+            self.compute_window_edge_indices(num_samples_data)
+        return self._left_hand_window_edge_indices
+
+    def downsample_time_axis(self, time_axis):
+        lhwe = self.left_hand_window_edge_indices(len(time_axis))
+        multiple_window_time_axis = time_axis[lhwe]
+        return multiple_window_time_axis
+
 
 #<PROPERTIES THAT NEED SAMPLING RATE>
 #these may be moved elsewhere later
@@ -213,7 +235,7 @@ def main():
 
     qq = np.arange(15)
     windowing_scheme = WindowingScheme(num_samples_window=3, num_samples_overlap=1)
-    ww = windowing_scheme.apply_sliding_window(qq)
+    ww = windowing_scheme.apply_sliding_window(qq, return_xarry=True)
     print(ww)
     print("finito")
 
