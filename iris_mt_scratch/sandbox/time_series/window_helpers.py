@@ -1,6 +1,12 @@
 """
 Notes in google doc:
 https://docs.google.com/document/d/1CsRhSLXsRG8HQxM4lKNqVj-V9KA9iUQAvCOtouVzFs0/edit?usp=sharing
+
+This is setup to use 1D numpy arrays.  If we wanted to use an xarray, how would we do the indexing?
+ToDo: Review what happens when we pass a column vector (dimension =Nx1, rather than 1d N)
+
+
+
 """
 
 import numpy as np
@@ -8,7 +14,6 @@ from numpy.lib.stride_tricks import as_strided
 import time
 from numba import jit
 
-#from windowing_scheme_aurora import WindowingScheme
 
 #<WINDOW - TIME SERIES RELATIONSHIP>
 def available_number_of_windows_in_array(n_samples_array, n_samples_window, n_advance):
@@ -157,6 +162,7 @@ def check_that_all_sliding_window_functions_return_equivalent_arrays():
             difference = reference_result - results[function_label]
             if np.sum(np.abs(difference)) == 0:
                 print(f"OK {i}")
+                #put an assert here instead of OK
 
 
 
@@ -166,12 +172,7 @@ def do_some_tests():
     n_samples_window = 128; n_overlap = 96; n_advance = n_samples_window-n_overlap;
     #qq = np.random.random(N)
     qq = np.arange(N)
-    # windowing_scheme = WindowingScheme(num_samples_window=n_samples_window, num_samples_overlap=n_overlap)
-    # print(windowing_scheme.num_samples_advance)
-    # print(windowing_scheme.available_number_of_windows(N))
-    # print(qq.shape)
-    # qq = np.atleast_2d(qq)
-    # print(qq.shape)
+
     sw = striding_window(np.arange(15), 3, 2, num_windows=4)
     print(sw)
 

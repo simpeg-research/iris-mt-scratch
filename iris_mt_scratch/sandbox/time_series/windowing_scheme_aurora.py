@@ -25,10 +25,30 @@ Indeed the frequencies come from this class if it has a sampling rate.  While sa
  rate.  ... or should we push the frequency stuffs to a combination of TS plus WindowingScheme?
  The latter feels more appropriate.
 
+<20210510>
+When 2D arrays are generated how should we index them?
+[[ 0  1  2]
+ [ 2  3  4]
+ [ 4  5  6]
+ [ 6  7  8]
+ [ 8  9 10]
+ [10 11 12]
+ [12 13 14]]
+ In this example the rows are indexing the individual windows ... and so they should be associated
+ with the time of each window.  We will need to set a standard for this.  Obvious options are
+ center_time of window and time_of_first sample. I prefer time_of_first sample.  This can always be
+ transformed to center time or any other standard later.  We can call this the "window time axis"
+ The columns are indexing "steps of delta-t".  The actual times are different for every row, so it would be best
+ to use something like [0, dt, 2*dt] for that axis to keep it general.  We can call this the
+ "within-window sample time axis"
+
+ Try making it an xarray.
+ </20210510>
 """
 
-import numpy as np
 import copy
+import numpy as np
+import xarray as xr
 
 from iris_mt_scratch.sandbox.time_series.apodization_window import ApodizationWindow
 
@@ -97,12 +117,14 @@ class WindowingScheme(ApodizationWindow):
                                                                            self.num_samples_advance)
         return available_number_of_windows
 
-    def apply_sliding_window(self, data):
+    def apply_sliding_window(self, data, time_vector=None, dt=None):
         """
 
         Parameters
         ----------
         data
+        time_vector: standin for the time coordinate of xarray.
+        dt: stand in for sampling interval
 
         Returns
         -------
@@ -110,12 +132,36 @@ class WindowingScheme(ApodizationWindow):
         """
         sliding_window_function = SLIDING_WINDOW_FUNCTIONS[self.striding_function_label]
         reshaped_data = sliding_window_function(data, self.num_samples_window, self.num_samples_advance)
+        print("test casting to xarray here")
+
+        #<Get window_time_axis coordinate>
+        self.compute_window_edge_indices(len(data))
+        lhwe = self.left_hand_window_edge_indices
+        if time_vector is None:
+            time_vector = np.arange(len(data))
+        multiple_window_time_axis = time_vector[lhwe]
+        #</Get window_time_axis coordinate>
+
+        #<Get within-window_time_axis coordinate>
+        if dt is None:
+            print("Warning dt not defined, using dt=1")
+            dt = 1.0
+        within_window_time_axis = dt*np.arange(self.num_samples_window)
+        #<Get within-window_time_axis coordinate>
+
+        #<Cast to xarray>
+        xrd = xr.DataArray(reshaped_data, dims=["time", "within-window time"],
+                           coords={"within-window time": within_window_time_axis,
+                                   "time": multiple_window_time_axis})
+        #</Cast to xarray>
         return reshaped_data
 
-    @property
-    def window_edge_indices(self):
+    def compute_window_edge_indices(self, num_samples_data):
         """This has been useful in the past but maybe not needed here"""
-        pass
+        number_of_windows = self.available_number_of_windows(num_samples_data)
+
+        self.left_hand_window_edge_indices= np.arange(number_of_windows)*self.num_samples_advance
+        return
 
 #<PROPERTIES THAT NEED SAMPLING RATE>
 #these may be moved elsewhere later
