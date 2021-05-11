@@ -29,13 +29,8 @@ import pandas as pd
 import time
 import xarray as xr
 
-class WindowedMultiVariateTimeSeries(MultiVariateTimeSeries):
-    """
-    This class is like a measurand whose parent is a time series ... full multivariate implementation looks
-    like it may
-    """
-    def __init__(self):
-        self.attribute = None
+from iris_mt_scratch.sandbox.time_series.windowing_scheme_aurora import WindowingScheme
+from iris_mt_scratch.sandbox.time_series.time_axis_helpers import test_generate_time_axis
 
 class MultiVariateTimeSeries(object):
     """
@@ -56,8 +51,8 @@ class MultiVariateTimeSeries(object):
     """
 
     def __init__(self, **kwargs):
-        kwargs = self.validate_kwargs(**kwargs)
-        self.sampling_rate = kwargs.get('sampling_rate', None)
+        #kwargs = self.validate_kwargs(**kwargs)
+        self._sampling_rate = kwargs.get("sampling_rate", None)#kwargs.get('sampling_rate', None)
         self.xarray = kwargs.get('xarray', None) #NEW
         self.metadata = kwargs.get('metadata', None) #NEW key it with the xarray channel labels
 
@@ -78,7 +73,8 @@ class MultiVariateTimeSeries(object):
 
     @property
     def sampling_rate(self):
-        return self.xarray.meta_dict['sampling_rate']
+        return self._sampling_rate
+        #return self.xarray.meta_dict['sampling_rate']
 
     def channel(self, channel_label):
         """
@@ -104,7 +100,8 @@ class MultiVariateTimeSeries(object):
         """
         for channel_id in self.channel_labels:
             channel_data = self.channel(channel_id)
-            windowed_data = 
+            windowed_data = windowing_scheme.apply_sliding_window(channel_data, return_xarry=True)
+            print("?")
 
     def apply_windowing_channel(self, channel_label):
         pass
@@ -223,8 +220,22 @@ class MultiVariateTimeSeries(object):
         #    print("have to handle odd and even case")
         return frequencies
 
-    def fft(self):
-        fourier_transform = np.fft.fft(self.data)
+    def short_time_fourier_transform(self, windowing_scheme):
+        """
+        Intended to return a 3D xarray, keyed by channel, time and frequecy
+        Parameters
+        ----------
+        windowing_scheme
+
+        Returns
+        -------
+
+        """
+
+        for channel in channels:
+            self.apply_windowing_scheme(channel, windowing_scheme)
+            fourier_transform = np.fft.fft(self.data)
+        #merge all the channel ffts into one animal
         return fourier_transform
 #</FREQUENCY DOMAIN>
 
@@ -238,47 +249,14 @@ class MultiVariateTimeSeries(object):
         pass
 
 
-def test_generate_time_axis(t0, n_samples, sampling_rate):
+class WindowedMultiVariateTimeSeries(MultiVariateTimeSeries):
     """
-    Two obvious ways to generate an axis of timestanps here.
-    One method is slow and more precise, the other is fast but drops some nanoseconds due to integer roundoff error.
-
-    Parameters
-    ----------
-    t0
-    n_samples
-    sampling_rate
-
-    Returns
-    -------
-
+    This class is like a measurand whose parent is a time series ... full multivariate implementation looks
+    like it may
     """
-    t0 = np.datetime64(t0)
-    dt = 1. / sampling_rate
+    def __init__(self):
+        self.attribute = None
 
-    # <SLOW>
-    #the issue here is that the nanoseconds granularity forces a roundoff error,
-    #in the example of say 3Hz, we are 333333333ns between samples, which drops 1ns
-    #per second.  To get around that we can use this slow method
-    tt = time.time()
-    time_vector_seconds = dt * np.arange(n_samples)
-    time_vector_nanoseconds = (np.round(1e9 * time_vector_seconds)).astype(int)
-    # time_vector_nanoseconds = int(np.round(1e9*time_vector_seconds))
-    time_index_1 = np.array([t0 + np.timedelta64(x, 'ns') for x in time_vector_nanoseconds])
-    processing_time_1 = tt - time.time()
-    print(f"{processing_time_1}")
-    # </SLOW>
-
-    # <FAST>
-    tt = time.time()
-    dt_nanoseconds = int(np.round(1e9 * dt))
-    dt_timedelta = np.timedelta64(dt_nanoseconds, 'ns')
-    time_index_2= t0 + np.arange(n_samples) * dt_timedelta
-    processing_time_2 = tt - time.time()
-    print(f"{processing_time_2}")
-    print(f"{processing_time_1/processing_time_2}")
-    # </FAST>
-    return time_index_1
 
 
 
@@ -300,25 +278,26 @@ def test_initialize_multivariate_time_series():
 
     #</DATA ACCESS>
     mvts = MultiVariateTimeSeries(sampling_rate=sampling_rate, xarray=xrd)
+    print("ADD A METADATA DICTIONARY HERE?")
     return mvts
     
-#     print("ok")
-#     #pd.DatetimeIndex()
-#     #t0 = np.daa.Timestamp(2021, 4, 4, 14, 20, 44)
-# #    time_axis = pd.date_range(t0, periods=10, freq=1.0)
-# 
-#     mvts = MultiVariateTimeSeries(sps=10.0, data=np.random.randn(111))
-#     return mvts
 
 
 def test_apply_windowing_to_mvts():
     mvts = test_initialize_multivariate_time_series()
-    from iris_mt_scratch.sandbox.time_series.windowing_scheme_aurora import WindowingScheme
     windowing_scheme = WindowingScheme(num_samples_window=128, num_samples_overlap=64, taper='hamming')
-    
+    mvts.apply_windowing_scheme(windowing_scheme)
+
+    print("testing")
+
+def test_fourier_transform():
+    windowing_scheme = WindowingScheme(num_samples_window=128, num_samples_overlap=64, taper='hamming')
+    mvts.shor(windowing_scheme)
 
 def main():
-    ts = test_multivariate_time_series()
+    mvts = test_initialize_multivariate_time_series()
+    test_apply_windowing_to_mvts()
+
     print('ok')
 
 if __name__ == "__main__":
