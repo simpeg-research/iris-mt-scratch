@@ -1,17 +1,26 @@
 """
 20210511: This script is intended to run an example version of end-to-end processing.
 """
+
 import datetime
 import numpy as np
+from pathlib import Path
 import xarray as xr
 
 from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
 from mth5.timeseries.channel_ts import ChannelTS
 from mth5.timeseries.run_ts import RunTS
+#from mt_metadata
+xml_path = Path("/home/kkappler/software/irismt/mt_metadata/data/xml")
+magnetic_xml_template = xml_path.joinpath("mtml_magnetometer_example.xml")
+electric_xml_template = xml_path.joinpath("mtml_electrode_example.xml")
+single_station_xml_template = xml_path.joinpath("mtml_single_station.xml")
 
 #<LOAD SOME DATA FROM A SINGLE STATION>
 N = 86400
 SAMPLING_RATE = 1.0
+
+
 def get_dummy_channel(component, station_label=""):
     if component[0]=='h':
         ch = ChannelTS('magnetic')
@@ -42,10 +51,6 @@ def get_example_data(component=None, load_actual=False, station_label=None):
     mvts = RunTS(array_list=array_list)
     print("OKEE")
     return mvts
-        #xrd = xr.
-
-
-
 #</LOAD SOME DATA FROM A SINGLE STATION>
 
 
@@ -54,6 +59,7 @@ def get_example_data(component=None, load_actual=False, station_label=None):
 def main():
     pkd_mvts = get_example_data(station_label="PKD")
     sao_mvts = get_example_data(station_label="SAO")
+
     print("try to combine these runs")
 
 

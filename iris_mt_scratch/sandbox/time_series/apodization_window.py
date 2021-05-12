@@ -47,6 +47,7 @@ For example
 TODO: decide if "family" should be "taper_family"
 
 config to be called num_samples
+
 """
 # import iris_mt_scratch.logging_util import init_logging
 # logger = init_logging(__name__,module_name = 'aurora.time_series.taper')
@@ -90,6 +91,7 @@ class ApodizationWindow(object):
 
 
     Instantiate an apodization window object.
+
     """
     def __init__(self, **kwargs):
         """
@@ -100,12 +102,13 @@ class ApodizationWindow(object):
         """
         self.family = kwargs.get('family', 'boxcar')
         self._num_samples_window = kwargs.get('num_samples_window', 0)
-        self.taper = kwargs.get('array', np.empty(0))
+        self._taper = kwargs.get('taper', np.empty(0))
         self.additional_args = kwargs.get('additional_args', {})
-        self.coherent_gain = None
-        self.nenbw = None
-        self.S1 = None
-        self.S2 = None
+
+        self._coherent_gain = None
+        self._nenbw = None
+        self._S1 = None
+        self._S2 = None
         self._apodization_factor = None
 
         if self.taper.size==0:
@@ -146,24 +149,50 @@ class ApodizationWindow(object):
         window_args.insert(0, self.family)
         window_args = tuple(window_args)
         self.taper = ssig.get_window(window_args, self.num_samples_window)
-        self.calc_apodization_factor
+        self.calc_apodization_factor#calculate
         return
+
 
 
     @property
-    def calc_apodization_factor(self):
-        S1 = sum(self.taper)
-        S2 = sum(self.taper**2);
-        self.coherent_gain = S1 / self.num_samples_window
-        self.nenbw = self.num_samples_window*S2/(S1**2)
-        self._apodization_factor = np.sqrt(self.nenbw)*self.coherent_gain
-        return
+    def S1(self):
+        if getattr(self, "_S1", None) is None:
+            self._S1 = sum(self.taper)
+        return self._S1
+
+    @property
+    def S2(self):
+        if getattr(self, "_S2", None) is None:
+            self._S2 = sum(self.taper**2)
+        return self._S2
+
+    @property
+    def coherent_gain(self):
+        return self.S1 / self.num_samples_window
+
+    @property
+    def nenbw(self):
+        return self.num_samples_window * self.S2 / (self.S1 ** 2)
+
+    @property
+    def taper(self):
+        return self._taper
+
+    @taper.setter
+    def taper(self, x):
+        self._taper=x
+        self._S1 = None
+        self._S2 = None
+
 
     @property
     def apodization_factor(self):
         if self._apodization_factor is None:
-            self.calc_apodization_factor
+            self._apodization_factor = np.sqrt(self.nenbw) * self.coherent_gain
         return self._apodization_factor
+
+
+
 
 def test_can_inititalize_apodization_window():
     """

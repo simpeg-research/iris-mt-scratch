@@ -16,8 +16,9 @@ for that to be the case you need to
 """
 #<FOURIER TRANSFORM CONFIG>
 window_length = 128
-window_overlap = 64
 taper_family = 'hamming'
+
+window_overlap = 64
 
 # window_length = 128
 # window_overlap = 64
