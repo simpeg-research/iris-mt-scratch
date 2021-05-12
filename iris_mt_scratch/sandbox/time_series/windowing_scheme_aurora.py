@@ -184,6 +184,9 @@ class WindowingScheme(ApodizationWindow):
         multiple_window_time_axis = time_axis[lhwe]
         return multiple_window_time_axis
 
+    def apply_taper(self):
+        pass
+
 
 #<PROPERTIES THAT NEED SAMPLING RATE>
 #these may be moved elsewhere later
@@ -214,29 +217,78 @@ class WindowingScheme(ApodizationWindow):
 
 
 
+def apply_taper_to_windowed_array(taper, windowed_array):
+    """
+    This method will eventually become a class method but leaving the pure linear algebra call as a
+    separate routine for easier future dev.  Will make assumptions here about the shape and dimensions
+    of windowed array that can be handled in class method.
+
+    Parameters
+    ----------
+    taper
+    windowed_array
+
+    Returns
+    -------
+
+    """
+    print("hello")
+    tapered_array = windowed_array.data * taper #this seems to do spare diag mult
+    #time trial it against a few other methods
+    return tapered_array
+
+
+
+def test_can_instantiate_scheme():
+    ws = WindowingScheme(num_samples_window=128, num_samples_overlap=32, num_samples_data=1000, taper='hamming')
+    ws.sampling_rate = 50.0
+    print(ws.window_duration)
+    print("assert some condtion here")
+    return
+
+def test_can_apply_sliding_window():
+    N = 10000
+    qq = np.random.random(N)
+    windowing_scheme = WindowingScheme(num_samples_window=64, num_samples_overlap=50)
+    print(windowing_scheme.num_samples_advance)
+    print(windowing_scheme.available_number_of_windows(N))
+    ww = windowing_scheme.apply_sliding_window(qq)
+    return ww
+
+def test_can_apply_sliding_window_and_return_xarray():
+    qq = np.arange(15)
+    windowing_scheme = WindowingScheme(num_samples_window=3, num_samples_overlap=1)
+    ww = windowing_scheme.apply_sliding_window(qq, return_xarry=True)
+    print(ww)
+    return ww
+
+def test_can_apply_taper():
+    import matplotlib.pyplot as plt
+    N = 10000
+    qq = np.random.random(N)
+    windowing_scheme = WindowingScheme(num_samples_window=64, num_samples_overlap=50,
+                                       family="hamming")
+    print(windowing_scheme.num_samples_advance)
+    print(windowing_scheme.available_number_of_windows(N))
+    windowed_data = windowing_scheme.apply_sliding_window(qq)
+    print("get taper")
+    tapered_windowed_data = apply_taper_to_windowed_array(windowing_scheme.taper, windowed_data)
+    plt.plot(windowed_data[0],'r');plt.plot(tapered_windowed_data[0],'g')
+    plt.show()
+    print("ok")
+    return
 
 
 def main():
     """
     Testing the windowing scheme
     """
-    ws = WindowingScheme(num_samples_window=128, num_samples_overlap=32, num_samples_data=1000, taper='hamming')
-    ws.sampling_rate = 50.0
-    print(ws.window_duration)
+    test_can_instantiate_scheme()
+    ww = test_can_apply_sliding_window()
+    ww = test_can_apply_sliding_window_and_return_xarray()
+    test_can_apply_taper()
     print("@ToDo Insert an integrated test showing common usage of sliding window\
     for 2D arrays, for example windowing for dnff")
-
-    N = 10000
-    windowing_scheme = WindowingScheme(num_samples_window=64, num_samples_overlap=50)
-    print(windowing_scheme.num_samples_advance)
-    print(windowing_scheme.available_number_of_windows(N))
-    qq = np.random.random(N)
-    ww = windowing_scheme.apply_sliding_window(qq)
-
-    qq = np.arange(15)
-    windowing_scheme = WindowingScheme(num_samples_window=3, num_samples_overlap=1)
-    ww = windowing_scheme.apply_sliding_window(qq, return_xarry=True)
-    print(ww)
     print("finito")
 
 if __name__ == "__main__":
