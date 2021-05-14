@@ -48,6 +48,10 @@ When 2D arrays are generated how should we index them?
 There is an open trade here about wheter to embed the data length as an ivar or a variable we pass.
 i.e. whether the same windowing scheme is independent of the data length or not.
 
+TODO: Regarding the optional time_vector input to self.apply_sliding_window() ... this current implementation
+takes as input numpy array data.  We need to also allow for an xarray to be implemented.
+In the simplest case we would take an xarray in and extract its "time" axis as time vector
+
 """
 
 import copy
@@ -57,6 +61,7 @@ import xarray as xr
 from iris_mt_scratch.sandbox.time_series.apodization_window import ApodizationWindow
 
 #from iris_mt_scratch.sandbox.time_series.window_helpers import sliding_window
+from iris_mt_scratch.sandbox.time_series.window_helpers import apply_taper_to_windowed_array
 from iris_mt_scratch.sandbox.time_series.window_helpers import available_number_of_windows_in_array
 from iris_mt_scratch.sandbox.time_series.window_helpers import SLIDING_WINDOW_FUNCTIONS
 
@@ -122,6 +127,17 @@ class WindowingScheme(ApodizationWindow):
         return available_number_of_windows
 
     def apply_sliding_window(self, data, time_vector=None, dt=None,
+                             return_xarry=False):
+        if isinstance(data, np.ndarray):
+            windowed_obj = self.apply_sliding_window_numpy(data, time_vector=time_vector,
+                                                           dt=dt, return_xarry=return_xarry)
+        elif isinstance(data, xr.Dataset):
+            print("THIS CASE NOT YET HANDLED")
+
+        return windowed_obj
+
+
+    def apply_sliding_window_numpy(self, data, time_vector=None, dt=None,
                              return_xarry=False):
         """
 
@@ -209,7 +225,6 @@ class WindowingScheme(ApodizationWindow):
         """
         return self.num_samples_advance*self.dt
 
-
 #</PROPERTIES THAT NEED SAMPLING RATE>
 
 
@@ -217,30 +232,9 @@ class WindowingScheme(ApodizationWindow):
 
 
 
-def apply_taper_to_windowed_array(taper, windowed_array):
-    """
-    This method will eventually become a class method but leaving the pure linear algebra call as a
-    separate routine for easier future dev.  Will make assumptions here about the shape and dimensions
-    of windowed array that can be handled in class method.
-
-    Parameters
-    ----------
-    taper
-    windowed_array
-
-    Returns
-    -------
-
-    """
-    print("hello")
-    tapered_array = windowed_array.data * taper #this seems to do spare diag mult
-    #time trial it against a few other methods
-    return tapered_array
-
-
-
 def test_can_instantiate_scheme():
-    ws = WindowingScheme(num_samples_window=128, num_samples_overlap=32, num_samples_data=1000, taper='hamming')
+    ws = WindowingScheme(num_samples_window=128, num_samples_overlap=32, num_samples_data=1000,
+                         family='hamming')
     ws.sampling_rate = 50.0
     print(ws.window_duration)
     print("assert some condtion here")
@@ -278,6 +272,24 @@ def test_can_apply_taper():
     print("ok")
     return
 
+def test_can_create_xarray_dataset_from_several_sliding_window_xarrays():
+    """
+    This method is going to create a bunch of xarray
+    Returns
+    -------
+
+    """
+    pass
+
+def test_fourier_transform():
+    """
+    This method needs to get a windowed time series, apply the taper,
+    fft, scale the Fourier coefficients
+    Returns
+    -------
+
+    """
+    pass
 
 def main():
     """
@@ -286,6 +298,7 @@ def main():
     test_can_instantiate_scheme()
     ww = test_can_apply_sliding_window()
     ww = test_can_apply_sliding_window_and_return_xarray()
+    qq = test_can_create_xarray_dataset_from_several_sliding_window_xarrays()
     test_can_apply_taper()
     print("@ToDo Insert an integrated test showing common usage of sliding window\
     for 2D arrays, for example windowing for dnff")
