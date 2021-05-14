@@ -149,7 +149,7 @@ class ApodizationWindow(object):
         window_args.insert(0, self.family)
         window_args = tuple(window_args)
         self.taper = ssig.get_window(window_args, self.num_samples_window)
-        self.calc_apodization_factor#calculate
+        self.apodization_factor#calculate
         return
 
 
@@ -207,6 +207,9 @@ def test_can_inititalize_apodization_window():
     apodization_window = ApodizationWindow(family='kaiser', num_samples_window=128, additional_args={"beta":8})
     print(apodization_window.summary)
     apodization_window = ApodizationWindow(family='slepian', num_samples_window=64, additional_args={"width":0.3})
+    print(apodization_window.summary)
+    apodization_window = ApodizationWindow(family='custom', num_samples_window=64,
+                                           taper=np.abs(np.random.randn(64)))
     print(apodization_window.summary)
     # print(apodization_window)
 
