@@ -127,10 +127,16 @@ class WindowingScheme(ApodizationWindow):
         return available_number_of_windows
 
     def apply_sliding_window(self, data, time_vector=None, dt=None,
-                             return_xarry=False):
+                             return_xarray=False):
         if isinstance(data, np.ndarray):
             windowed_obj = self.apply_sliding_window_numpy(data, time_vector=time_vector,
-                                                           dt=dt, return_xarry=return_xarry)
+                                                           dt=dt, return_xarray=return_xarray)
+
+        elif isinstance(data, xr.DataArray):
+            #add some checks that time axis is labelled "time"?
+            windowed_obj = self.apply_sliding_window_numpy(data.data, time_vector=data.time.data,
+                                                           dt=dt, return_xarray=return_xarray)
+            print("THIS CASE NOT YET HANDLED")
         elif isinstance(data, xr.Dataset):
             print("THIS CASE NOT YET HANDLED")
 
@@ -138,7 +144,7 @@ class WindowingScheme(ApodizationWindow):
 
 
     def apply_sliding_window_numpy(self, data, time_vector=None, dt=None,
-                             return_xarry=False):
+                             return_xarray=False):
         """
 
         Parameters
@@ -155,7 +161,7 @@ class WindowingScheme(ApodizationWindow):
         reshaped_data = sliding_window_function(data, self.num_samples_window, self.num_samples_advance)
 
         #<FACTOR TO ANOTHER METHOD>
-        if return_xarry:
+        if return_xarray:
             print("test casting to xarray here")
 
             #<Get window_time_axis coordinate>
@@ -232,7 +238,7 @@ class WindowingScheme(ApodizationWindow):
 
 
 
-def test_can_instantiate_scheme():
+def test_instantiate_windowing_scheme():
     ws = WindowingScheme(num_samples_window=128, num_samples_overlap=32, num_samples_data=1000,
                          family='hamming')
     ws.sampling_rate = 50.0
@@ -240,7 +246,7 @@ def test_can_instantiate_scheme():
     print("assert some condtion here")
     return
 
-def test_can_apply_sliding_window():
+def test_apply_sliding_window():
     N = 10000
     qq = np.random.random(N)
     windowing_scheme = WindowingScheme(num_samples_window=64, num_samples_overlap=50)
@@ -249,12 +255,22 @@ def test_can_apply_sliding_window():
     ww = windowing_scheme.apply_sliding_window(qq)
     return ww
 
-def test_can_apply_sliding_window_and_return_xarray():
+def test_apply_sliding_window_can_return_xarray():
     qq = np.arange(15)
     windowing_scheme = WindowingScheme(num_samples_window=3, num_samples_overlap=1)
-    ww = windowing_scheme.apply_sliding_window(qq, return_xarry=True)
+    ww = windowing_scheme.apply_sliding_window(qq, return_xarray=True)
     print(ww)
     return ww
+
+def test_apply_sliding_window_to_xarray(return_xarray=False):
+    N = 10000
+    xrd = xr.DataArray(np.random.randn(N), dims=["time", ],
+                       coords={"time": np.arange(N)})
+    windowing_scheme = WindowingScheme(num_samples_window=64, num_samples_overlap=50)
+    ww = windowing_scheme.apply_sliding_window(xrd, return_xarray=return_xarray)
+    print("Yay!")
+    return ww
+
 
 def test_can_apply_taper():
     import matplotlib.pyplot as plt
@@ -295,9 +311,11 @@ def main():
     """
     Testing the windowing scheme
     """
-    test_can_instantiate_scheme()
-    ww = test_can_apply_sliding_window()
-    ww = test_can_apply_sliding_window_and_return_xarray()
+    test_instantiate_windowing_scheme()
+    np_out = test_apply_sliding_window()
+    xr_out = test_apply_sliding_window_can_return_xarray()
+    ww = test_apply_sliding_window_to_xarray(return_xarray=False)
+    xr_out = test_apply_sliding_window_to_xarray(return_xarray=True)
     qq = test_can_create_xarray_dataset_from_several_sliding_window_xarrays()
     test_can_apply_taper()
     print("@ToDo Insert an integrated test showing common usage of sliding window\
