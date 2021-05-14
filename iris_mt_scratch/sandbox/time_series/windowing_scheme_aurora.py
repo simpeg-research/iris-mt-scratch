@@ -86,12 +86,7 @@ class WindowingScheme(ApodizationWindow):
         self.num_samples_overlap = kwargs.get("num_samples_overlap", None)
         self.striding_function_label = kwargs.get("striding_function_label", "crude")
         self._left_hand_window_edge_indices = None
-        # self.num_samples_data = kwargs.get("num_samples_data", None)
         #self.sampling_rate = kwargs.get('sampling_rate', None)
-        #self.taper = ApodizationWindow(**kwargs)
-
-        # if self.time_series_length > 0:
-        #     self._compute_edge_indices()
 
     def clone(cls):
         return copy.deepcopy(cls)
@@ -136,9 +131,11 @@ class WindowingScheme(ApodizationWindow):
             #add some checks that time axis is labelled "time"?
             windowed_obj = self.apply_sliding_window_numpy(data.data, time_vector=data.time.data,
                                                            dt=dt, return_xarray=return_xarray)
-            print("THIS CASE NOT YET HANDLED")
+
         elif isinstance(data, xr.Dataset):
             print("THIS CASE NOT YET HANDLED")
+            print("Idea is to loop over the 'channels' in the ")
+            raise Exception
 
         return windowed_obj
 
@@ -237,7 +234,7 @@ class WindowingScheme(ApodizationWindow):
 
 
 
-
+#<TESTS>
 def test_instantiate_windowing_scheme():
     ws = WindowingScheme(num_samples_window=128, num_samples_overlap=32, num_samples_data=1000,
                          family='hamming')
@@ -293,8 +290,37 @@ def test_can_create_xarray_dataset_from_several_sliding_window_xarrays():
     This method is going to create a bunch of xarray
     Returns
     -------
-
+ds = xr.Dataset(
+   ....:     {
+   ....:         "temperature": (["x", "y", "time"], temp),
+   ....:         "precipitation": (["x", "y", "time"], precip),
+   ....:     },
+   ....:     coords={
+   ....:         "lon": (["x", "y"], lon),
+   ....:         "lat": (["x", "y"], lat),
+   ....:         "time": pd.date_range("2014-09-06", periods=3),
+   ....:         "reference_time": pd.Timestamp("2014-09-05"),
+   ....:     },
+   ....: )
+   ....:
     """
+    from iris_mt_scratch.sandbox.time_series.time_axis_helpers import make_time_axis
+    N = 1000
+    t0 = np.datetime64("1977-03-02 12:34:56")
+    time_vector = make_time_axis(t0, N, 50.0)
+    print("ok, now make a few xarrays, then bind them into a dataset")
+    ds = xr.Dataset(
+        {
+            "hx" : (["time",], np.random.randn(N)),
+            "hy": (["time", ], np.random.randn(N)),
+        },
+        coords={
+            "time":time_vector,
+            "some random info": "dogs",
+            "some more random info": "cats"
+        },
+    )
+    print("ok")
     pass
 
 def test_fourier_transform():
@@ -306,6 +332,7 @@ def test_fourier_transform():
 
     """
     pass
+#</TESTS>
 
 def main():
     """
