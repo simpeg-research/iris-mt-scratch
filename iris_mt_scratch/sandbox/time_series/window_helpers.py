@@ -131,7 +131,27 @@ SLIDING_WINDOW_FUNCTIONS = {
 # SLIDING_WINDOW_FUNCTIONS["numba"] = sliding_window_numba
 # SLIDING_WINDOW_FUNCTIONS["stride"] = striding_window
 
+#<TAPER HELPERS>
+def apply_taper_to_windowed_array(taper, windowed_array):
+    """
+    This method will eventually become a class method but leaving the pure linear algebra call as a
+    separate routine for easier future dev.  Will make assumptions here about the shape and dimensions
+    of windowed array that can be handled in class method.
 
+    Parameters
+    ----------
+    taper
+    windowed_array
+
+    Returns
+    -------
+
+    """
+    print("hello")
+    tapered_array = windowed_array.data * taper #this seems to do spare diag mult
+    #time trial it against a few other methods
+    return tapered_array
+#</TAPER HELPERS>
 
 
 def check_that_all_sliding_window_functions_return_equivalent_arrays():
