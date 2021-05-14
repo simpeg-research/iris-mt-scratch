@@ -201,7 +201,6 @@ def test_can_inititalize_apodization_window():
     print(apodization_window.summary)
     apodization_window = ApodizationWindow(family='hamming', num_samples_window=128)
     print(apodization_window.summary)
-    #print(apodization_window)
     apodization_window = ApodizationWindow(family='blackmanharris', num_samples_window=256)
     print(apodization_window.summary)
     apodization_window = ApodizationWindow(family='kaiser', num_samples_window=128, additional_args={"beta":8})
@@ -211,7 +210,7 @@ def test_can_inititalize_apodization_window():
     apodization_window = ApodizationWindow(family='custom', num_samples_window=64,
                                            taper=np.abs(np.random.randn(64)))
     print(apodization_window.summary)
-    # print(apodization_window)
+
 
 
 def main():
