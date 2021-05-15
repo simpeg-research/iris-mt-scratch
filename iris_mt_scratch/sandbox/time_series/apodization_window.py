@@ -18,15 +18,15 @@ scipy.signal.get_window()
     }
 
 The Taper Config has 2 possible forms:
-1. Standard form: ["family", "num_samples_window", "additional_args"]
+1. Standard form: ["taper_family", "num_samples_window", "additional_args"]
 
 Example 1
-"family" = "hamming"
+"taper_family" = "hamming"
 "num_samples_window" = 128
 "additional_args" = {}
 
 Example 2
-"family" = "kaiser"
+"taper_family" = "kaiser"
 "num_samples_window" = 64
 "additional_args" = {"beta":8}
 
@@ -40,7 +40,7 @@ It is a little bit unsatisfying that the args need to be ordered for scipy.signa
 It is suggested that you use OrderedDict() for any windows that have more than one additional args.
 
 For example
-"family" = 'general_gaussian'
+"taper_family" = 'general_gaussian'
 "additional_args" = OrderedDict("power":1.5, "sigma":7)
 
 
@@ -60,8 +60,8 @@ import scipy.signal as ssig
 class ApodizationWindow(object):
     """
     usage: apod_window = ApodizationWindow()
-    @type family: string
-    @ivar family: Specify the taper type - boxcar, kaiser, hanning, etc
+    @type taper_family: string
+    @ivar taper_family: Specify the taper type - boxcar, kaiser, hanning, etc
     @type num_samples_window: Integer
     @ivar num_samples_window: The number of samples in the taper
     @type taper: numpy array
@@ -77,7 +77,7 @@ class ApodizationWindow(object):
 
     @author: kkappler
     @note: example usage:
-        tpr=ApodizationWindow(family='hanning', num_samples_window=55 )
+        tpr=ApodizationWindow(taper_family='hanning', num_samples_window=55 )
 
     Window factors S1, S2, CG, ENBW are modelled after Heinzel et al. p12-14
     [1] Spectrum and spectral density estimation by the Discrete Fourier transform
@@ -100,7 +100,7 @@ class ApodizationWindow(object):
         ----------
         kwargs
         """
-        self.family = kwargs.get('family', 'boxcar')
+        self.taper_family = kwargs.get('taper_family', 'boxcar')
         self._num_samples_window = kwargs.get('num_samples_window', 0)
         self._taper = kwargs.get('taper', np.empty(0))
         self.additional_args = kwargs.get('additional_args', {})
@@ -117,11 +117,11 @@ class ApodizationWindow(object):
     @property
     def summary(self):
         """
-        Returns a string comprised of the family, number_of_samples, and True/False if self.taper is not None
+        Returns a string comprised of the taper_family, number_of_samples, and True/False if self.taper is not None
         -------
 
         """
-        string1 = f"{self.family} {self.num_samples_window} taper_exists={bool(self.taper.any())}"
+        string1 = f"{self.taper_family} {self.num_samples_window} taper_exists={bool(self.taper.any())}"
         string2 = f"NENBW:{self.nenbw:.3f}, CG:{self.coherent_gain:.3f} window factor={self.apodization_factor:.3f}"
         return "\n".join([string1, string2])
 
@@ -146,7 +146,7 @@ class ApodizationWindow(object):
         note: this is just repackaging the args so that scipy.signal.get_window() accepts all cases.
         """
         window_args = [v for k,v in self.additional_args.items()]
-        window_args.insert(0, self.family)
+        window_args.insert(0, self.taper_family)
         window_args = tuple(window_args)
         self.taper = ssig.get_window(window_args, self.num_samples_window)
         self.apodization_factor#calculate
@@ -199,15 +199,15 @@ def test_can_inititalize_apodization_window():
     """
     apodization_window = ApodizationWindow(num_samples_window=4)
     print(apodization_window.summary)
-    apodization_window = ApodizationWindow(family='hamming', num_samples_window=128)
+    apodization_window = ApodizationWindow(taper_family='hamming', num_samples_window=128)
     print(apodization_window.summary)
-    apodization_window = ApodizationWindow(family='blackmanharris', num_samples_window=256)
+    apodization_window = ApodizationWindow(taper_family='blackmanharris', num_samples_window=256)
     print(apodization_window.summary)
-    apodization_window = ApodizationWindow(family='kaiser', num_samples_window=128, additional_args={"beta":8})
+    apodization_window = ApodizationWindow(taper_family='kaiser', num_samples_window=128, additional_args={"beta":8})
     print(apodization_window.summary)
-    apodization_window = ApodizationWindow(family='slepian', num_samples_window=64, additional_args={"width":0.3})
+    apodization_window = ApodizationWindow(taper_family='slepian', num_samples_window=64, additional_args={"width":0.3})
     print(apodization_window.summary)
-    apodization_window = ApodizationWindow(family='custom', num_samples_window=64,
+    apodization_window = ApodizationWindow(taper_family='custom', num_samples_window=64,
                                            taper=np.abs(np.random.randn(64)))
     print(apodization_window.summary)
 

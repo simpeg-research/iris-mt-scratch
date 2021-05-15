@@ -124,15 +124,16 @@ class WindowingScheme(ApodizationWindow):
     def apply_sliding_window(self, data, time_vector=None, dt=None,
                              return_xarray=False):
         if isinstance(data, np.ndarray):
-            windowed_obj = self.apply_sliding_window_numpy(data, time_vector=time_vector,
+            windowed_obj = self._apply_sliding_window_numpy(data, time_vector=time_vector,
                                                            dt=dt, return_xarray=return_xarray)
 
         elif isinstance(data, xr.DataArray):
             #add some checks that time axis is labelled "time"?
-            windowed_obj = self.apply_sliding_window_numpy(data.data, time_vector=data.time.data,
+            windowed_obj = self._apply_sliding_window_numpy(data.data, time_vector=data.time.data,
                                                            dt=dt, return_xarray=return_xarray)
 
         elif isinstance(data, xr.Dataset):
+            #for key in data
             print("THIS CASE NOT YET HANDLED")
             print("Idea is to loop over the 'channels' in the ")
             raise Exception
@@ -140,7 +141,7 @@ class WindowingScheme(ApodizationWindow):
         return windowed_obj
 
 
-    def apply_sliding_window_numpy(self, data, time_vector=None, dt=None,
+    def _apply_sliding_window_numpy(self, data, time_vector=None, dt=None,
                              return_xarray=False):
         """
 
@@ -237,7 +238,7 @@ class WindowingScheme(ApodizationWindow):
 #<TESTS>
 def test_instantiate_windowing_scheme():
     ws = WindowingScheme(num_samples_window=128, num_samples_overlap=32, num_samples_data=1000,
-                         family='hamming')
+                         taper_family='hamming')
     ws.sampling_rate = 50.0
     print(ws.window_duration)
     print("assert some condtion here")
@@ -274,7 +275,7 @@ def test_can_apply_taper():
     N = 10000
     qq = np.random.random(N)
     windowing_scheme = WindowingScheme(num_samples_window=64, num_samples_overlap=50,
-                                       family="hamming")
+                                       taper_family="hamming")
     print(windowing_scheme.num_samples_advance)
     print(windowing_scheme.available_number_of_windows(N))
     windowed_data = windowing_scheme.apply_sliding_window(qq)
@@ -308,6 +309,8 @@ ds = xr.Dataset(
     N = 1000
     t0 = np.datetime64("1977-03-02 12:34:56")
     time_vector = make_time_axis(t0, N, 50.0)
+    windowing_scheme = WindowingScheme(num_samples_window=32, num_samples_overlap=8,
+                                       taper_family="hamming")
     print("ok, now make a few xarrays, then bind them into a dataset")
     ds = xr.Dataset(
         {
@@ -320,6 +323,7 @@ ds = xr.Dataset(
             "some more random info": "cats"
         },
     )
+    windowing_scheme.apply_sliding_window(ds)
     print("ok")
     pass
 
