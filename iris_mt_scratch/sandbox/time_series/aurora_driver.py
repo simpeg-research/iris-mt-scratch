@@ -5,11 +5,17 @@
         # mt_root_element = tree.getroot()
         # mt_experiment = Experiment()
         # mt_experiment.from_xml(mt_root_element)
+
+
+TODO: MTH5 updated so that channel now returns a channel response
+The question is how to propagate the response information to
+Attributes RunTS
 """
 
 import datetime
 import numpy as np
 from pathlib import Path
+import subprocess
 import xarray as xr
 
 from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
@@ -27,6 +33,90 @@ single_station_xml_template = xml_path.joinpath("mtml_single_station.xml")
 #<LOAD SOME DATA FROM A SINGLE STATION>
 N = 86400
 SAMPLING_RATE = 1.0
+
+def execute_subprocess(cmd, **kwargs):
+    """
+    A wrapper for subprocess.call
+    """
+    exit_status = subprocess.call([cmd], shell=True, **kwargs)
+    if exit_status != 0:
+        raise Exception("Failed to execute \n {}".format(cmd))
+    return
+
+def iris_data_access_via_wget():
+    webpage = "https://service.iris.edu/fdsnws/station/1/query?net=BK&sta=PKD&loc=--&cha=LQ2,LQ3,LT1,LT2&starttime=2007-03-14T14:20:00&endtime=2008-08-26T00:00:00&level=response&format=xml&includecomments=true&nodata=404"
+    output_folder = Path.expanduser("/home/kkappler/.cache/iris_mt/20210514")
+    output_filepath = output_folder.joinpath("pkd_test.xml")
+
+    cmd = f"wget {webpage} -- output - document {output_filepath}"
+#    wget
+# - -output - document / Path / TO / PKD.xml
+def IRISDataAccessExample():
+    from obspy.clients.fdsn import Client
+    from obspy import UTCDateTime
+    from obspy import read_inventory
+
+    # Read inventory foerm IRIS Client
+    client = Client(base_url="IRIS", force_redirect=True)
+    starttime = UTCDateTime("2004-03-14T14:20:00")
+    endtime = UTCDateTime("2004-03-17T00:00:00")
+    inventory = client.get_stations(network="BK", station="PKD", channel="LQ2,LQ3,LT1,LT2",
+                                    starttime=starttime,
+                                    endtime=endtime,
+                                    level="response")
+    print("ADD sensor_type here")
+    networks = inventory.networks
+    for network in networks:
+        for station in network:
+            for channel in station:
+                response =  channel.response
+                stages = response.response_stages
+                info = '{}-{}-{} {}-stage response'.format(network.code, station.code, channel.code, len(stages))
+                print(info)
+
+                for i,stage in enumerate(stages):
+                    new_name = f"{channel.code}_{i}"
+                    stage.name = new_name
+                    print(f"stage {stage}, name {stage.name}")
+                    if stage.name is None:
+                        print("Give it a name")
+    inventory.networks = networks
+    print("NETWORKS REASSIGNED")
+    # for network in networks:
+    #     for station in network:
+    #         for channel in station:
+    #             response =  channel.response
+    #             stages = response.response_stages
+    #             #info = '{}-{}-{} {}-stage response'.format(network.code, station.code, channel.code, len(stages))
+    #             #print(info)
+    #             for i,stage in enumerate(stages):
+    #                 #new_name = f"{channel.code}_{i}"
+    #                 #stage.name = new_name
+    #                 #print(f"stage {stage}, name {stage.name}")
+    #                 print(f"stagename {stage.name}")
+    #                 if stage.name is None:
+    #                     print(f"stage {stage}, name {stage.name}")
+    #                     print("Give it a name")
+    #                 print("OK")
+    from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
+
+    translator = XMLInventoryMTExperiment()
+    experiment = translator.xml_to_mt(inventory_object=inventory)
+    print("supposedly we have an inventory now ... check it")
+    # networks = inventory.networks
+    # for network in networks:
+    #     for station in network:
+    #         for channel in station:
+    #             response =  channel.response
+    #             stages = response.response_stages
+    #             info = '{}-{}-{} {}-stage response'.format(network.code, station.code, channel.code, len(stages))
+    #             print(info)
+    #
+    #             for stage in stages:
+    #                 #pass
+    #                 print('stage {}'.format(stage))
+
+    return
 
 def get_filters_dict_from_experiment_xml(xml):
     xml_path = Path(xml)
@@ -60,7 +150,7 @@ def embed_metadata_into_run_ts(direct_from_xml=False):
     test_file = Path("test.h5")
     if test_file.exists():
         test_file.unlink()
-    #test_file.unlink(not_exists_ok=True)
+
     if direct_from_xml:
         from mt_metadata.timeseries import Experiment
         xml_path = Path("single_station_mt.xml")
@@ -131,9 +221,11 @@ def filter_control_example():
     print("OK")
 
 def main():
-    filter_control_example()
-    runts_object = embed_metadata_into_run_ts()
-    runts_object = embed_metadata_into_run_ts(direct_from_xml=True)
+    #iris_data_access_via_wget()
+    IRISDataAccessExample()
+    # filter_control_example()
+    # runts_object = embed_metadata_into_run_ts()
+    # runts_object = embed_metadata_into_run_ts(direct_from_xml=True)
     pkd_mvts = get_example_data(station_label="PKD")
     sao_mvts = get_example_data(station_label="SAO")
     pkd = pkd_mvts.dataset
