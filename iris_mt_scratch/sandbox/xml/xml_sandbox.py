@@ -45,6 +45,34 @@ def test_instantiate_and_export_mth5_metadata_example():
     f.close()
     return
 
+
+def get_response_inventory_from_iris(network=None, station=None, channel=None,
+                            starttime=None, endtime=None):
+    """
+
+    Parameters
+    ----------
+    network     network = "BK"
+    station
+    channel     channel = "LQ2,LQ3,LT1,LT2"
+    starttime
+    endtime
+    station_id
+
+    Returns
+    -------
+
+    """
+    client = Client(base_url="IRIS", force_redirect=True)
+    inventory = client.get_stations(network=network,
+                                    station=station,
+                                    channel=channel,
+                                    starttime=starttime,
+                                    endtime=endtime,
+                                    level="response")
+    return inventory
+
+
 def test_get_example_em_xml_from_iris_via_web():
     print("test_get_example_em_xml_from_iris_via_web")
     client = Client(base_url="IRIS", force_redirect=True)
@@ -64,8 +92,27 @@ def test_get_example_xml_inventory():
     iterate_through_mtml(inventory)
     print('ok')
 
-
-
+def describe_inventory_stages(inventory, assign_names=False):
+    new_names_were_assigned = False
+    networks = inventory.networks
+    for network in networks:
+        for station in network:
+            for channel in station:
+                response =  channel.response
+                stages = response.response_stages
+                info = '{}-{}-{} {}-stage response'.format(network.code, station.code, channel.code, len(stages))
+                print(info)
+                for i,stage in enumerate(stages):
+                    print(f"stagename {stage.name}")
+                    if stage.name is None:
+                        if assign_names:
+                            new_names_were_assigned = True
+                            new_name = f"{channel.code}_{i}"
+                            stage.name = new_name
+                            print(f"ASSIGNING stage {stage}, name {stage.name}")
+    if new_names_were_assigned:
+        inventory.networks = networks
+    return
 
 
 def iterate_through_mtml(networks):
