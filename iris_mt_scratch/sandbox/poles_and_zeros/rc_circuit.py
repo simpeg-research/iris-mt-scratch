@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as signal
 
-from plot_helpers import plot_complex_response
+from iris_mt_scratch.sandbox.plot_helpers import plot_complex_response
 
 j = np.complex(0.0, 1.0)
 

@@ -39,8 +39,8 @@ import statsmodels.api as sm
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.arima_model import ARMA
 
-from plot_helpers import plot_complex_response
-from rc_circuit import RCCircuit
+from iris_mt_scratch.sandbox.plot_helpers import plot_complex_response
+from iris_mt_scratch.sandbox.poles_and_zeros.rc_circuit import RCCircuit
 from time_series import TimeSeries
 xcomplex = ssig.iirfilter
 class WhiteNoise(TimeSeries):
