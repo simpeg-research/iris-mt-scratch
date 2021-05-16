@@ -30,6 +30,8 @@ from mth5.timeseries.channel_ts import ChannelTS
 from mth5.timeseries.run_ts import RunTS
 from mth5.utils.pathing import DATA_DIR
 
+from aurora_driver_tests_and_helpers import filter_control_example
+from aurora_driver_tests_and_helpers import get_experiment_from_xml
 TEST_DATA_HELPER = TestDataHelper(dataset_id="PKD_SAO_2004_272_00-2004_272_02")
 
 xml_path = Path("/home/kkappler/software/irismt/mt_metadata/data/xml")
@@ -77,12 +79,6 @@ def get_mth5_experiment_from_iris(station_id, save_experiment_xml=False):
         print(f"saved experiement to {output_xml_path}")
     return experiment
 
-def get_experiment_from_xml(xml):
-    xml_path = Path(xml)
-    experiment = Experiment()
-    experiment.from_xml(fn=xml_path)
-    print(experiment, type(experiment))
-    return experiment
 
 def get_filters_dict_from_experiment(experiment):
     print(experiment, type(experiment))
@@ -121,7 +117,7 @@ def embed_metadata_into_run_ts(station_id, xml_path=None):
         experiment = get_mth5_experiment_from_iris(station_id)
         # #this method not working -
         # from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
-        # from mt_metadata.utils import STATIONXML_02
+        from mt_metadata.utils import STATIONXML_02
         # translator = XMLInventoryMTExperiment()
         # mt_experiment = translator.xml_to_mt(stationxml_fn=STATIONXML_02)
 
@@ -176,20 +172,6 @@ def get_example_data(component=None, load_actual=False, station_label=None):
 
 #</LOAD SOME DATA FROM A SINGLE STATION>
 
-def filter_control_example(xml_path=None):
-    if xml_path is None:
-        #make this load from mt_metadata the versioned file
-        xml_path = Path("single_station_mt.xml")
-    experiment = get_experiment_from_xml(xml_path)
-    filter_dict = get_filters_dict_from_experiment(experiment)
-    my_filter = filter_dict[list(filter_dict.keys())[0]]
-    frq = np.arange(5)+1.2
-    response = my_filter.complex_response(frq)
-    print("response", response)
-
-    for key in filter_dict.keys():
-        print(f"key = {key}")
-    print("OK")
 
 def main():
     #experiment = get_mth5_experiment_from_iris("PKD", save_experiment_xml=True)
