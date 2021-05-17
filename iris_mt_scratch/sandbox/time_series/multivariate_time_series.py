@@ -29,7 +29,7 @@ import pandas as pd
 import time
 import xarray as xr
 
-from iris_mt_scratch.sandbox.time_series.windowing_scheme_aurora import WindowingScheme
+from iris_mt_scratch.sandbox.time_series.windowing_scheme import WindowingScheme
 from iris_mt_scratch.sandbox.time_series.time_axis_helpers import test_generate_time_axis
 
 class MultiVariateTimeSeries(object):
