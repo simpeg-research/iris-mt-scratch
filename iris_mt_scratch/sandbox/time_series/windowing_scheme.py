@@ -123,6 +123,19 @@ class WindowingScheme(ApodizationWindow):
 
     def apply_sliding_window(self, data, time_vector=None, dt=None,
                              return_xarray=False):
+        """
+        I would like this method to support numpy arrays as well as xarrays.
+        Parameters
+        ----------
+        data
+        time_vector
+        dt
+        return_xarray
+
+        Returns windowed_obj
+        -------
+
+        """
         if isinstance(data, np.ndarray):
             windowed_obj = self._apply_sliding_window_numpy(data, time_vector=time_vector,
                                                            dt=dt, return_xarray=return_xarray)
@@ -133,15 +146,32 @@ class WindowingScheme(ApodizationWindow):
                                                            dt=dt, return_xarray=return_xarray)
 
         elif isinstance(data, xr.Dataset):
+            #only going to handle return xarray=T
+            ds = xr.Dataset()
             for key in data.keys():
-                #windowed_obj =
                 print(f"key {key}")
-            print("THIS CASE NOT YET HANDLED")
-            print("Idea is to loop over the 'channels' in the ")
-            raise Exception
+                windowed_obj = self._apply_sliding_window_numpy(data[key].data,
+                                                                time_vector=data.time.data,
+                                                                dt=dt,
+                                                                return_xarray=return_xarray)
+                ds.update({key:windowed_obj})
+            windowed_obj = ds
 
+        else:
+            print(f"Unexpected Data type {type(data)}")
+            raise Exception
         return windowed_obj
 
+    def apply_fft(self):
+        """
+        lets assume we have already applied sliding window.
+        Things to think about:
+        1. Overwrite self data when apply windowing could normally be set to true.
+        Maybe we should have
+        Returns
+        -------
+
+        """
 
     def _apply_sliding_window_numpy(self, data, time_vector=None, dt=None,
                              return_xarray=False):
@@ -158,34 +188,38 @@ class WindowingScheme(ApodizationWindow):
 
         """
         sliding_window_function = SLIDING_WINDOW_FUNCTIONS[self.striding_function_label]
-        reshaped_data = sliding_window_function(data, self.num_samples_window, self.num_samples_advance)
+        windowed_array = sliding_window_function(data, self.num_samples_window, self.num_samples_advance)
 
         #<FACTOR TO ANOTHER METHOD>
         if return_xarray:
-            print("test casting to xarray here")
-
             #<Get window_time_axis coordinate>
             if time_vector is None:
                 time_vector = np.arange(len(data))
-            multiple_window_time_axis = self.downsample_time_axis(time_vector)
+            window_time_axis = self.downsample_time_axis(time_vector)
             #</Get window_time_axis coordinate>
 
-            #<Get within-window_time_axis coordinate>
-            if dt is None:
-                print("Warning dt not defined, using dt=1")
-                dt = 1.0
-            within_window_time_axis = dt*np.arange(self.num_samples_window)
-            #<Get within-window_time_axis coordinate>
-
-            #<Cast to xarray>
-            xrd = xr.DataArray(reshaped_data, dims=["time", "within-window time"],
-                               coords={"within-window time": within_window_time_axis,
-                                       "time": multiple_window_time_axis})
-            #</Cast to xarray>
+            xrd = self.cast_windowed_data_to_xarray(windowed_array, window_time_axis, dt=dt)
             return xrd
         #</FACTOR TO ANOTHER METHOD>
         else:
-            return reshaped_data
+            return windowed_array
+
+
+    def cast_windowed_data_to_xarray(self, windowed_array, time_vector, dt=None):
+
+        # <Get within-window_time_axis coordinate>
+        if dt is None:
+            print("Warning dt not defined, using dt=1")
+            dt = 1.0
+        within_window_time_axis = dt * np.arange(self.num_samples_window)
+        # <Get within-window_time_axis coordinate>
+
+        # <Cast to xarray>
+        xrd = xr.DataArray(windowed_array, dims=["time", "within-window time"],
+                           coords={"within-window time": within_window_time_axis,
+                                   "time": time_vector})
+        # </Cast to xarray>
+        return xrd
 
     def xarray_sliding_window(self, data, time_vector=None, dt=None):
         pass
@@ -206,8 +240,41 @@ class WindowingScheme(ApodizationWindow):
         multiple_window_time_axis = time_axis[lhwe]
         return multiple_window_time_axis
 
-    def apply_taper(self):
-        pass
+    def apply_taper(self, data):
+        if isinstance(data, np.ndarray):
+            tapered_windowed_data = self._apply_taper_numpy(data)
+            return tapered_windowed_data
+        elif isinstance(data, xr.DataArray):
+            print("not yet handled")
+            raise Exception
+        elif isinstance(data, xr.Dataset):
+            #overwriting
+            #output_ds = xr.Dataset()
+            for key in data.keys():
+                print(f"key {key}")
+                data[key].data = self._apply_taper_numpy(data[key].data)
+                #tapered_obj = xr.DataArray()
+                #output_ds.update({key: tapered_obj})
+            return data
+        else:
+            print(f"Unexpected Data type {type(data)}")
+            raise Exception
+
+
+
+    def _apply_taper_numpy(self, data):
+        """
+        The axes are set up so that each rc? is tapered
+        Parameters
+        ----------
+        data
+
+        Returns
+        -------
+
+        """
+        tapered_windowed_data = apply_taper_to_windowed_array(self.taper, data)
+        return tapered_windowed_data
 
 
 #<PROPERTIES THAT NEED SAMPLING RATE>
@@ -235,3 +302,19 @@ class WindowingScheme(ApodizationWindow):
 
 
 
+
+def fft_xr(ds):
+    """
+    assume you have an xr.dataset or xr.DataArray.  It is 2D.
+    Parameters
+    ----------
+    ds
+
+    Returns
+    -------
+
+    """
+    import numpy as np
+    #for each DataArray in the Dataset, we will apply fft along the within-window-time axis.
+
+    print("ok")

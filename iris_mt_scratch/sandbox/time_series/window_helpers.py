@@ -138,6 +138,9 @@ def apply_taper_to_windowed_array(taper, windowed_array):
     separate routine for easier future dev.  Will make assumptions here about the shape and dimensions
     of windowed array that can be handled in class method.
 
+    In particular, each "window" is a row of windowed_array.  Thus taper operates by
+    multiplying, point-by-point (Schur) each row or windowed_array
+
     Parameters
     ----------
     taper
@@ -147,7 +150,6 @@ def apply_taper_to_windowed_array(taper, windowed_array):
     -------
 
     """
-    print("hello")
     tapered_array = windowed_array.data * taper #this seems to do spare diag mult
     #time trial it against a few other methods
     return tapered_array
@@ -224,10 +226,26 @@ def do_some_tests():
     print("numba  {}".format(time.time()-t0))
 
 
+def test_apply_taper():
+    import matplotlib.pyplot as plt
+    import scipy.signal as ssig
+    num_samples_window = 64
+    num_windows = 100
+    windowed_data =  np.abs(np.random.randn(num_windows,num_samples_window))
+    taper = ssig.hanning(num_samples_window)
+    tapered_windowed_data = apply_taper_to_windowed_array(taper, windowed_data)
+    plt.plot(windowed_data[0], 'r', label='data');
+    plt.plot(tapered_windowed_data[0], 'g', label='tapered data')
+    plt.legend()
+    plt.show()
+    return
+
+
 
 def main():
     check_that_all_sliding_window_functions_return_equivalent_arrays()
     do_some_tests()
+    test_apply_taper()
     print("Fin")
 
 
