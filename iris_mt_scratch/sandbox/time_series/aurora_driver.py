@@ -19,7 +19,7 @@ from pathlib import Path
 import xarray as xr
 
 from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
-from iris_mt_scratch.sandbox.io_helpers.test_data import TestDataHelper
+from iris_mt_scratch.sandbox.io_helpers.test_data import get_channel
 from iris_mt_scratch.sandbox.io_helpers.generate_pkdsao_test_data import get_station_xml_filename
 from iris_mt_scratch.sandbox.xml.xml_sandbox import describe_inventory_stages
 from iris_mt_scratch.sandbox.xml.xml_sandbox import get_response_inventory_from_iris
@@ -33,7 +33,7 @@ from mth5.utils.pathing import DATA_DIR
 
 from iris_data_metadata_ingest_helpers import filter_control_example
 from iris_data_metadata_ingest_helpers import get_experiment_from_xml
-TEST_DATA_HELPER = TestDataHelper(dataset_id="PKD_SAO_2004_272_00-2004_272_02")
+#TEST_DATA_HELPER = TestDataHelper(dataset_id="PKD_SAO_2004_272_00-2004_272_02")
 HEXY = ['hx','hy','ex','ey'] #default components list
 xml_path = Path("/home/kkappler/software/irismt/mt_metadata/data/xml")
 magnetic_xml_template = xml_path.joinpath("mtml_magnetometer_example.xml")
@@ -44,7 +44,7 @@ single_station_xml_template = Path("single_station_mt.xml")
 
 #<LOAD SOME DATA FROM A SINGLE STATION>
 N = 288000#86400
-SAMPLING_RATE = 40.0#1.0
+#DEFAULT_SAMPLING_RATE = 40.0#1.0
 
 def test_can_read_inventory_from_its_file_representation():
     pass
@@ -201,31 +201,8 @@ def cast_run_to_run_ts(run, array_list=None, station_id=None):
 
 
 
-def get_channel(component, station_id="", load_actual=False):
-    if component[0]=='h':
-        ch = ChannelTS('magnetic')
-    elif component[0]=='e':
-        ch = ChannelTS('electric')
-    ch.sample_rate = SAMPLING_RATE
-    ch.start = datetime.datetime(2004, 9, 28, 0, 0, 0)#
-    print("insert ROVER call here to access PKD, date, interval")
-    print("USE this to load the data to MTH5")
-    #https: // github.com / kujaku11 / mth5 / blob / master / examples / make_mth5_from_z3d.py
-    if load_actual:
-        time_series = TEST_DATA_HELPER.load_channel(station_id, component)
-    else:
-        time_series = np.random.randn(N)
 
-    ch.ts = time_series  # get this from iris                    # .data, .timestamo
-    ch.station_metadata.id = station_id
-    ch.run_metadata.id = 'MT001a'
-    component_string = "_".join([component,station_id,])
-    #component_string = component
-    ch.component = component_string
-    return ch
-
-
-def get_example_array_list(components_list=None, load_actual=False, station_id=None):
+def get_example_array_list(components_list=None, load_actual=True, station_id=None):
     array_list = []
     for component in components_list:
         channel = get_channel(component,
@@ -235,7 +212,7 @@ def get_example_array_list(components_list=None, load_actual=False, station_id=N
     return array_list
 
 def get_example_data(components_list=HEXY,
-                     load_actual=False,
+                     load_actual=True,
                      station_id=None):
     array_list = get_example_array_list(components_list=components_list,
                                         load_actual=load_actual,
