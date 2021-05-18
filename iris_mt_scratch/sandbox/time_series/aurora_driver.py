@@ -31,8 +31,8 @@ from mth5.timeseries.channel_ts import ChannelTS
 from mth5.timeseries.run_ts import RunTS
 from mth5.utils.pathing import DATA_DIR
 
-from aurora_driver_tests_and_helpers import filter_control_example
-from aurora_driver_tests_and_helpers import get_experiment_from_xml
+from iris_data_metadata_ingest_helpers import filter_control_example
+from iris_data_metadata_ingest_helpers import get_experiment_from_xml
 TEST_DATA_HELPER = TestDataHelper(dataset_id="PKD_SAO_2004_272_00-2004_272_02")
 HEXY = ['hx','hy','ex','ey'] #default components list
 xml_path = Path("/home/kkappler/software/irismt/mt_metadata/data/xml")
