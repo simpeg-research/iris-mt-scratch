@@ -155,6 +155,21 @@ def apply_taper_to_windowed_array(taper, windowed_array):
     return tapered_array
 #</TAPER HELPERS>
 
+#<FFT HELPERS>
+def apply_fft_to_windowed_array(windowed_array):
+    """
+    This will operate row-wise as well
+    Parameters
+    ----------
+    windowed_array
+
+    Returns
+    -------
+
+    """
+    pass
+
+
 
 def check_that_all_sliding_window_functions_return_equivalent_arrays():
     """

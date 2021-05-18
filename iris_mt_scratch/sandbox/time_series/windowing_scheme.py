@@ -146,14 +146,14 @@ class WindowingScheme(ApodizationWindow):
                                                            dt=dt, return_xarray=return_xarray)
 
         elif isinstance(data, xr.Dataset):
-            #only going to handle return xarray=T
+            #return_xarray = True #only going to handle return xarray=T
             ds = xr.Dataset()
             for key in data.keys():
                 print(f"key {key}")
                 windowed_obj = self._apply_sliding_window_numpy(data[key].data,
                                                                 time_vector=data.time.data,
                                                                 dt=dt,
-                                                                return_xarray=return_xarray)
+                                                                return_xarray=True)
                 ds.update({key:windowed_obj})
             windowed_obj = ds
 
@@ -162,16 +162,7 @@ class WindowingScheme(ApodizationWindow):
             raise Exception
         return windowed_obj
 
-    def apply_fft(self):
-        """
-        lets assume we have already applied sliding window.
-        Things to think about:
-        1. Overwrite self data when apply windowing could normally be set to true.
-        Maybe we should have
-        Returns
-        -------
 
-        """
 
     def _apply_sliding_window_numpy(self, data, time_vector=None, dt=None,
                              return_xarray=False):
@@ -206,7 +197,18 @@ class WindowingScheme(ApodizationWindow):
 
 
     def cast_windowed_data_to_xarray(self, windowed_array, time_vector, dt=None):
+        """
+        TODO: FACTOR guts of this method out of class and place in window_helpers...
+        Parameters
+        ----------
+        windowed_array
+        time_vector
+        dt
 
+        Returns
+        -------
+
+        """
         # <Get within-window_time_axis coordinate>
         if dt is None:
             print("Warning dt not defined, using dt=1")
@@ -276,6 +278,23 @@ class WindowingScheme(ApodizationWindow):
         tapered_windowed_data = apply_taper_to_windowed_array(self.taper, data)
         return tapered_windowed_data
 
+    def frequency_axis(self, dt):
+        df = 1./(self.num_samples_window*dt)
+        np.fft.fftfreq(self.num_samples_window, d=dt)
+        pass
+
+    def apply_fft(self):
+        """
+        lets assume we have already applied sliding window and taper.
+        Things to think about:
+        We want to assign the frequency axis during this method
+        Maybe we should have
+        Returns
+        -------
+
+        """
+        print("call fft_xr_ds")
+        pass
 
 #<PROPERTIES THAT NEED SAMPLING RATE>
 #these may be moved elsewhere later
@@ -303,9 +322,11 @@ class WindowingScheme(ApodizationWindow):
 
 
 
-def fft_xr(ds):
+def fft_xr_ds(dataset, sps):
     """
     assume you have an xr.dataset or xr.DataArray.  It is 2D.
+    This chould call window_helpers.apply_fft_to_windowed_array
+    or get moved to window_helpers.py
     Parameters
     ----------
     ds
@@ -313,8 +334,27 @@ def fft_xr(ds):
     Returns
     -------
 
+    TODO: Review nf_sjvk
     """
     import numpy as np
     #for each DataArray in the Dataset, we will apply fft along the within-window-time axis.
-
-    print("ok")
+    #SET AXIS:
+    operation_axis = 1
+    output_ds = xr.Dataset()
+    key0 = list(dataset.keys())[0]
+    n_windows, samples_per_window = dataset[key0].data.shape
+    n_fft_harmonics = int(samples_per_window / 2)  # when len(window) is odd this is 1 sample shy
+    dt = 1. / sps
+    harmonic_frequencies = np.fft.fftfreq(samples_per_window, d=dt)
+    for key in dataset.keys():
+        print(f"key {key}")
+        data = dataset[key].data
+        window_means = data.mean(axis=operation_axis)
+        demeaned_data = (data.T - window_means).T
+        fspec_array = np.fft.fft(demeaned_data, axis=1)
+        frequencies = np.fft.fftfreq(128, d=dt)
+        xrd = xr.DataArray(fspec_array[:,0:n_fft_harmonics], dims=["time", "frequency"],
+                           coords={"frequency": frequencies[0:n_fft_harmonics],
+                                   "time": dataset.time.data})
+        output_ds.update({key:xrd})
+    return output_ds

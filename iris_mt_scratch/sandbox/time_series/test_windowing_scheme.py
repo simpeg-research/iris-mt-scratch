@@ -3,10 +3,11 @@ import xarray as xr
 
 from iris_mt_scratch.sandbox.time_series.time_axis_helpers import make_time_axis
 from windowing_scheme import WindowingScheme
-from windowing_scheme import fft_xr
+from windowing_scheme import fft_xr_ds
 
-def get_test_windowing_scheme(num_samples_window=32):
-    windowing_scheme = WindowingScheme(num_samples_window=num_samples_window, num_samples_overlap=8,
+def get_test_windowing_scheme(num_samples_window=32, num_samples_overlap=8):
+    windowing_scheme = WindowingScheme(num_samples_window=num_samples_window,
+                                       num_samples_overlap=num_samples_overlap,
                                        taper_family="hamming")
     return windowing_scheme
 
@@ -84,18 +85,20 @@ def test_can_apply_taper():
     print("ok")
     return
 
-def test_taper_dataset():
+def test_taper_dataset(plot=False):
     import matplotlib.pyplot as plt
     windowing_scheme = get_test_windowing_scheme(num_samples_window=64)
     ds = get_xarray_dataset()
     windowed_dataset = windowing_scheme.apply_sliding_window(ds, return_xarray=True)
-    plt.plot(windowed_dataset["hx"].data[0,:], 'r', label='window0')
-    plt.plot(windowed_dataset["hx"].data[1,:], 'r', label='window1')
+    if plot:
+        plt.plot(windowed_dataset["hx"].data[0,:], 'r', label='window0')
+        plt.plot(windowed_dataset["hx"].data[1,:], 'r', label='window1')
     tapered_dataset = windowing_scheme.apply_taper(windowed_dataset)
-    plt.plot(tapered_dataset["hx"].data[0, :], 'g', label='tapered0')
-    plt.plot(tapered_dataset["hx"].data[1, :], 'g', label='tapered1')
-    plt.legend()
-    plt.show()
+    if plot:
+        plt.plot(tapered_dataset["hx"].data[0, :], 'g', label='tapered0')
+        plt.plot(tapered_dataset["hx"].data[1, :], 'g', label='tapered1')
+        plt.legend()
+        plt.show()
     print("OK")
 
 
@@ -113,8 +116,8 @@ def test_can_create_xarray_dataset_from_several_sliding_window_xarrays():
     windowing_scheme = get_test_windowing_scheme()
     ds = get_xarray_dataset()
     wds = windowing_scheme.apply_sliding_window(ds, return_xarray=True)
-    print("ok")
-    pass
+    print(wds)
+    return wds
 
 def test_fourier_transform():
     """
@@ -124,9 +127,15 @@ def test_fourier_transform():
     -------
 
     """
-    windowed_dataset = test_can_create_xarray_dataset_from_several_sliding_window_xarrays()
-    tapered_windowed_data = apply_taper_to_windowed_array(windowing_scheme.taper, windowed_data)
-    stft = fft_xr(windowed_dataset)
+    sampling_rate = 40.0
+    windowing_scheme = get_test_windowing_scheme(num_samples_window=128, num_samples_overlap=96)
+    ds = get_xarray_dataset(N=10000, sps=sampling_rate)
+    windowed_dataset = windowing_scheme.apply_sliding_window(ds)
+    tapered_windowed_dataset = windowing_scheme.apply_taper(windowed_dataset)
+    stft = fft_xr_ds(tapered_windowed_dataset, sampling_rate)
+    import matplotlib.pyplot as plt
+    plt.plot(stft.frequency.data, np.abs(stft["hx"].data.mean(axis=0)))
+    print("ok")
     pass
 #</TESTS>
 
@@ -141,8 +150,8 @@ def main():
     xr_out = test_apply_sliding_window_to_xarray(return_xarray=True)
     qq = test_can_create_xarray_dataset_from_several_sliding_window_xarrays()
     test_can_apply_taper()
-    test_taper_dataset()
-
+    test_taper_dataset(plot=False)
+    test_fourier_transform()
 
     print("@ToDo Insert an integrated test showing common usage of sliding window\
     for 2D arrays, for example windowing for dnff")
