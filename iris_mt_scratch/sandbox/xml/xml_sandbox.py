@@ -93,6 +93,20 @@ def test_get_example_xml_inventory():
     print('ok')
 
 def describe_inventory_stages(inventory, assign_names=False):
+    """
+    Scans iinventory looking for stages.  Has option to assign names to stages, these are used as keys in MTH5
+    Modifies inventory in place.
+
+    ToDo: Best practice to return inventory or no?
+    Parameters
+    ----------
+    inventory
+    assign_names
+
+    Returns
+    -------
+
+    """
     new_names_were_assigned = False
     networks = inventory.networks
     for network in networks:
@@ -112,7 +126,8 @@ def describe_inventory_stages(inventory, assign_names=False):
                             print(f"ASSIGNING stage {stage}, name {stage.name}")
     if new_names_were_assigned:
         inventory.networks = networks
-    return
+        print("NETWORKS REASSIGNED")
+    return #inventory
 
 
 def iterate_through_mtml(networks):

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pathlib
 import pandas as pd
 
+from iris_mt_scratch.sandbox.xml.xml_sandbox import describe_inventory_stages
 from iris_mt_scratch.sandbox.xml.xml_sandbox import get_response_inventory_from_iris
 from iris_mt_scratch.general_helper_functions import execute_subprocess
 from mth5.utils.pathing import DATA_DIR
@@ -83,25 +84,9 @@ def IRISDataAccessExample():
     inventory = get_response_inventory_from_iris(network="BK", station="PKD", channel="LQ2,LQ3,LT1,LT2",
                                                   starttime=starttime, endtime=endtime)
 
+    describe_inventory_stages(inventory, assign_names=True)
+    describe_inventory_stages(inventory, assign_names=False)
 
-    print("ADD sensor_type here")
-    networks = inventory.networks
-    for network in networks:
-        for station in network:
-            for channel in station:
-                response =  channel.response
-                stages = response.response_stages
-                info = '{}-{}-{} {}-stage response'.format(network.code, station.code, channel.code, len(stages))
-                print(info)
-
-                for i,stage in enumerate(stages):
-                    new_name = f"{channel.code}_{i}"
-                    stage.name = new_name
-                    print(f"stage {stage}, name {stage.name}")
-                    if stage.name is None:
-                        print("Give it a name")
-    inventory.networks = networks
-    print("NETWORKS REASSIGNED")
     from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
 
     translator = XMLInventoryMTExperiment()
@@ -168,9 +153,9 @@ def cast_data_to_archive(case_id=None):
 
 def main():
     IRISDataAccessExample()
-    test_can_read_rover()
-    iris_metadata_access_via_wget()
-    cast_data_to_archive()
+    # test_can_read_rover()
+    # iris_metadata_access_via_wget()
+    # cast_data_to_archive()
 
 
 if __name__ == "__main__":
