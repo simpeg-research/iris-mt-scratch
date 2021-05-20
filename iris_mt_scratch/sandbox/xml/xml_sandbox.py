@@ -47,7 +47,7 @@ def test_instantiate_and_export_mth5_metadata_example():
 
 
 def get_response_inventory_from_iris(network=None, station=None, channel=None,
-                            starttime=None, endtime=None):
+                            starttime=None, endtime=None, level="response"):
     """
 
     Parameters
@@ -69,7 +69,7 @@ def get_response_inventory_from_iris(network=None, station=None, channel=None,
                                     channel=channel,
                                     starttime=starttime,
                                     endtime=endtime,
-                                    level="response")
+                                    level=level)
     return inventory
 
 

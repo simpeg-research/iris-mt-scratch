@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pathlib
 import pandas as pd
 
+from iris_mt_scratch.sandbox.xml.xml_sandbox import get_response_inventory_from_iris
 from iris_mt_scratch.general_helper_functions import execute_subprocess
 from mth5.utils.pathing import DATA_DIR
 
@@ -75,14 +76,14 @@ def IRISDataAccessExample():
     from obspy import UTCDateTime
     from obspy import read_inventory
 
-    # Read inventory foerm IRIS Client
-    client = Client(base_url="IRIS", force_redirect=True)
     starttime = UTCDateTime("2004-03-14T14:20:00")
     endtime = UTCDateTime("2004-03-17T00:00:00")
-    inventory = client.get_stations(network="BK", station="PKD", channel="LQ2,LQ3,LT1,LT2",
-                                    starttime=starttime,
-                                    endtime=endtime,
-                                    level="response")
+
+    # Read inventory foerm IRIS Client
+    inventory = get_response_inventory_from_iris(network="BK", station="PKD", channel="LQ2,LQ3,LT1,LT2",
+                                                  starttime=starttime, endtime=endtime)
+
+
     print("ADD sensor_type here")
     networks = inventory.networks
     for network in networks:
@@ -166,6 +167,7 @@ def cast_data_to_archive(case_id=None):
 
 
 def main():
+    IRISDataAccessExample()
     test_can_read_rover()
     iris_metadata_access_via_wget()
     cast_data_to_archive()
