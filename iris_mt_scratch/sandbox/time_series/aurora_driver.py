@@ -18,11 +18,12 @@ import pandas as pd
 from pathlib import Path
 import xarray as xr
 
-from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
+#from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_channel
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_array_list
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data
 from iris_mt_scratch.sandbox.io_helpers.generate_pkdsao_test_data import get_station_xml_filename
+from iris_mt_scratch.sandbox.time_series.mth5_helpers import check_run_channels_have_expected_properties
 from iris_mt_scratch.sandbox.xml.xml_sandbox import describe_inventory_stages
 from iris_mt_scratch.sandbox.xml.xml_sandbox import get_response_inventory_from_iris
 from mt_metadata.timeseries import Experiment

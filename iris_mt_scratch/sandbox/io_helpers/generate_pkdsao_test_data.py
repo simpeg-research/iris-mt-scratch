@@ -60,6 +60,17 @@ def iris_metadata_access_via_wget():
 
 
 def IRISDataAccessExample():
+    """
+    This function needs to be factored to remove duplication.
+    Note it is composed of 3 parts
+    1. It gets an iris inventory (this is also a fcn in xml_sandbox --get_response_inventory_from_iris())
+    2. It cycles through the SNCL and blubs some info, adding stage names if needed
+    describe_inventory_stages() does this
+    3. It casts the inventory to an Experiement()
+    Returns
+    -------
+
+    """
     from obspy.clients.fdsn import Client
     from obspy import UTCDateTime
     from obspy import read_inventory
