@@ -2,9 +2,17 @@
 Examples of dumping a miniseed file from MTH5
 """
 
+from pathlib import Path
+import socket
+
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data
 
-
+hostname = socket.gethostname()
+if hostname=="thales4":
+    from mth5_test_data.util import MTH5_TEST_DATA_DIR
+    OUTPUT_PATH = MTH5_TEST_DATA_DIR.joinpath("iris")
+else:
+    OUTPUT_PATH = Path()
 
 
 def test_cast_pkd_to_mseed():
@@ -26,7 +34,9 @@ def test_cast_pkd_to_mseed():
         #data = hx_data.astype(np.int32)
         st = obspy.Stream([obspy.Trace(data=data, header=stats)])
     # write as ASCII file (encoding=0)
-        st.write(f"{ch_label}.mseed", format='MSEED', reclen=512)
+        output_mseed = OUTPUT_PATH.joinpath(f"{ch_label}.mseed")
+        #st.write(f"{ch_label}.mseed", format='MSEED', reclen=512)
+        st.write(output_mseed, format='MSEED', reclen=512)
     print("OK")
 
 

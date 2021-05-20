@@ -28,6 +28,7 @@ from iris_mt_scratch.sandbox.time_series.mth5_helpers import HEXY
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import cast_run_to_run_ts
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import embed_metadata_into_run
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import get_mth5_experiment_from_iris
+from iris_mt_scratch.sandbox.time_series.windowing_scheme import WindowingScheme
 
 
 def set_driver_parameters():
@@ -71,8 +72,13 @@ def main():
         sao_mvts = get_example_data(station_id="SAO")
         pkd = pkd_mvts.dataset
         sao = sao_mvts.dataset
-        pkd.update(sao)
+        sao.update(pkd)
+
     #</INITIALIZE DATA>
+
+    #<DEFINE WINDOWING/TAPER PARAMETERS>
+    windowing_scheme = WindowingScheme()
+    #</DEFINE WINDOWING/TAPER PARAMETERS>
     print("try to combine these runs")
 
 
