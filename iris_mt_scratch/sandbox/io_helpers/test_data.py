@@ -3,9 +3,10 @@ import numpy as np
 import pandas as pd
 
 from mth5.timeseries.channel_ts import ChannelTS
+from mth5.timeseries.run_ts import RunTS
 from mth5.utils.pathing import DATA_DIR
 
-
+HEXY = ['hx','hy','ex','ey'] #default components list
 
 class TestDataHelper(object):
     def __init__(self, **kwargs):
@@ -44,8 +45,8 @@ class TestDataHelper(object):
 
 
 DEFAULT_SAMPLING_RATE = 40.0
-
-def get_channel(component, station_id="", sampling_rate=DEFAULT_SAMPLING_RATE, load_actual=True ):
+DEFAULT_START_TIME = datetime.datetime(2004, 9, 28, 0, 0, 0)
+def get_channel(component, station_id="", start=None, sampling_rate=None, load_actual=True ):
     """
     One off - specifically for loading PKD and SAO data for May 24th spectral tests.
     Move this into either io_helpers or into
@@ -66,8 +67,16 @@ def get_channel(component, station_id="", sampling_rate=DEFAULT_SAMPLING_RATE, l
     elif component[0]=='e':
         ch = ChannelTS('electric')
 
+    if sampling_rate is None:
+        print(f"no sampling rate given, using default {DEFAULT_SAMPLING_RATE}")
+        sampling_rate = DEFAULT_SAMPLING_RATE
     ch.sample_rate = sampling_rate
-    ch.start = datetime.datetime(2004, 9, 28, 0, 0, 0)
+
+    if start is None:
+        print(f"no start time given, using default {DEFAULT_START_TIME}")
+        start = DEFAULT_START_TIME
+    ch.start = start
+
     print("insert ROVER call here to access PKD, date, interval")
     print("USE this to load the data to MTH5")
     #https: // github.com / kujaku11 / mth5 / blob / master / examples / make_mth5_from_z3d.py
@@ -76,12 +85,34 @@ def get_channel(component, station_id="", sampling_rate=DEFAULT_SAMPLING_RATE, l
     else:
         N = 288000
         time_series = np.random.randn(N)
+    ch.ts = time_series
 
-    ch.ts = time_series  # get this from iris                    # .data, .timestamo
     ch.station_metadata.id = station_id
-    ch.run_metadata.id = 'MT001a'
+
+    ch.run_metadata.id = "001"#'MT001a'
+
     component_string = "_".join([component,station_id,])
     ch.component = component_string
 
-
     return ch
+
+
+
+def get_example_array_list(components_list=None, load_actual=True, station_id=None):
+    array_list = []
+    for component in components_list:
+        channel = get_channel(component,
+                              station_id=station_id,
+                              load_actual=load_actual)
+        array_list.append(channel)
+    return array_list
+
+
+def get_example_data(components_list=HEXY,
+                     load_actual=True,
+                     station_id=None):
+    array_list = get_example_array_list(components_list=components_list,
+                                        load_actual=load_actual,
+                                        station_id=station_id)
+    mvts = RunTS(array_list=array_list)
+    return mvts

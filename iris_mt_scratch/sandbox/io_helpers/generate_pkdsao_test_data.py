@@ -1,10 +1,25 @@
+
 import matplotlib.pyplot as plt
+import pathlib
 import pandas as pd
 
 from iris_mt_scratch.general_helper_functions import execute_subprocess
 from mth5.utils.pathing import DATA_DIR
 
 ASCII_COLUMNS = ["hx", "hy", "ex", "ey"]
+
+
+def test_can_read_rover():
+    import obspy
+    home = pathlib.Path("~/").expanduser()
+    cache_path = home.joinpath(".cache")
+    iris_cache = cache_path.joinpath("iris_mt")
+    rover_cache = iris_cache.joinpath("datarepo", "data")
+    data_file = rover_cache.joinpath("BK/2004/272/PKD.BK.2004.272")
+    st1 = obspy.read(str(data_file))
+    print("?")
+
+
 def sort_out_which_channels_are_which():
     print("Not yet Implemented")
     print("You can use the mat-files un ULFEM if you really need to")
@@ -75,39 +90,11 @@ def IRISDataAccessExample():
                         print("Give it a name")
     inventory.networks = networks
     print("NETWORKS REASSIGNED")
-    # for network in networks:
-    #     for station in network:
-    #         for channel in station:
-    #             response =  channel.response
-    #             stages = response.response_stages
-    #             #info = '{}-{}-{} {}-stage response'.format(network.code, station.code, channel.code, len(stages))
-    #             #print(info)
-    #             for i,stage in enumerate(stages):
-    #                 #new_name = f"{channel.code}_{i}"
-    #                 #stage.name = new_name
-    #                 #print(f"stage {stage}, name {stage.name}")
-    #                 print(f"stagename {stage.name}")
-    #                 if stage.name is None:
-    #                     print(f"stage {stage}, name {stage.name}")
-    #                     print("Give it a name")
-    #                 print("OK")
     from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
 
     translator = XMLInventoryMTExperiment()
     experiment = translator.xml_to_mt(inventory_object=inventory)
     print("supposedly we have an inventory now ... check it")
-    # networks = inventory.networks
-    # for network in networks:
-    #     for station in network:
-    #         for channel in station:
-    #             response =  channel.response
-    #             stages = response.response_stages
-    #             info = '{}-{}-{} {}-stage response'.format(network.code, station.code, channel.code, len(stages))
-    #             print(info)
-    #
-    #             for stage in stages:
-    #                 #pass
-    #                 print('stage {}'.format(stage))
 
     return
 
@@ -168,6 +155,7 @@ def cast_data_to_archive(case_id=None):
 
 
 def main():
+    test_can_read_rover()
     iris_metadata_access_via_wget()
     cast_data_to_archive()
 

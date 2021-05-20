@@ -20,6 +20,8 @@ import xarray as xr
 
 from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_channel
+from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_array_list
+from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data
 from iris_mt_scratch.sandbox.io_helpers.generate_pkdsao_test_data import get_station_xml_filename
 from iris_mt_scratch.sandbox.xml.xml_sandbox import describe_inventory_stages
 from iris_mt_scratch.sandbox.xml.xml_sandbox import get_response_inventory_from_iris
@@ -31,8 +33,8 @@ from mth5.timeseries.channel_ts import ChannelTS
 from mth5.timeseries.run_ts import RunTS
 from mth5.utils.pathing import DATA_DIR
 
-from iris_data_metadata_ingest_helpers import filter_control_example
-from iris_data_metadata_ingest_helpers import get_experiment_from_xml
+from iris_metadata_ingest_helpers import filter_control_example
+from iris_metadata_ingest_helpers import get_experiment_from_xml
 #TEST_DATA_HELPER = TestDataHelper(dataset_id="PKD_SAO_2004_272_00-2004_272_02")
 HEXY = ['hx','hy','ex','ey'] #default components list
 xml_path = Path("/home/kkappler/software/irismt/mt_metadata/data/xml")
@@ -178,6 +180,7 @@ def embed_metadata_into_run(station_id, xml_path=None):
 
 def cast_run_to_run_ts(run, array_list=None, station_id=None):
     """
+    add to mth5 helpers?
     basically embed data into a run_ts object.
     array_list = get_example_array_list(components_list=HEXY,
                                         load_actual=True,
@@ -200,25 +203,6 @@ def cast_run_to_run_ts(run, array_list=None, station_id=None):
     return runts_object
 
 
-
-
-def get_example_array_list(components_list=None, load_actual=True, station_id=None):
-    array_list = []
-    for component in components_list:
-        channel = get_channel(component,
-                              station_id=station_id,
-                              load_actual=load_actual)
-        array_list.append(channel)
-    return array_list
-
-def get_example_data(components_list=HEXY,
-                     load_actual=True,
-                     station_id=None):
-    array_list = get_example_array_list(components_list=components_list,
-                                        load_actual=load_actual,
-                                        station_id=station_id)
-    mvts = RunTS(array_list=array_list)
-    return mvts
 
 #</LOAD SOME DATA FROM A SINGLE STATION>
 
