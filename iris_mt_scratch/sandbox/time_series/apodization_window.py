@@ -98,7 +98,11 @@ class ApodizationWindow(object):
 
         Parameters
         ----------
-        kwargs
+        kwargs:
+        taper_family
+        num_samples_window
+        taper
+        additional_args
         """
         self.taper_family = kwargs.get('taper_family', 'boxcar')
         self._num_samples_window = kwargs.get('num_samples_window', 0)

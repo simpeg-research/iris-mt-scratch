@@ -15,6 +15,7 @@ Attributes RunTS
 import datetime
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -33,9 +34,9 @@ from iris_mt_scratch.sandbox.time_series.windowing_scheme import WindowingScheme
 
 def set_driver_parameters():
     driver_parameters = {}
-    driver_parameters["create_xml"] = True
+    driver_parameters["create_xml"] = False
     driver_parameters["test_filter_control"] = True
-    driver_parameters["run_ts_from_xml_01"] = True
+    driver_parameters["run_ts_from_xml_01"] = False #True
     driver_parameters["run_ts_from_xml_02"] = False
     driver_parameters["run_ts_from_xml_03"] = False
     driver_parameters["initialize_data"] = True
@@ -69,15 +70,42 @@ def main():
     #<INITIALIZE DATA>
     if driver_parameters["initialize_data"]:
         pkd_mvts = get_example_data(station_id="PKD")
-        sao_mvts = get_example_data(station_id="SAO")
-        pkd = pkd_mvts.dataset
-        sao = sao_mvts.dataset
-        sao.update(pkd)
+#        sao_mvts = get_example_data(station_id="SAO")
+#        pkd = pkd_mvts.dataset
+#        sao = sao_mvts.dataset
+#        sao.update(pkd)
 
     #</INITIALIZE DATA>
+    windowing_scheme = WindowingScheme(taper_family="hamming", num_samples_window=288000, num_samples_overlap=0)
+    windowed_obj = windowing_scheme.apply_sliding_window(pkd_mvts.dataset)
+    tapered_obj = windowing_scheme.apply_taper(windowed_obj)
+    fft_obj = windowing_scheme.apply_fft(tapered_obj, pkd_mvts.sample_rate)
+    #print(len)
+    #frq = fft_obj.hx_pkd.frequency.data[1:]
 
+    plt.loglog(fft_obj.hx_pkd.frequency.data[1:].squeeze(), np.abs(fft_obj.hx_pkd.data[:,1:].squeeze()), )
+    plt.show()
     #<DEFINE WINDOWING/TAPER PARAMETERS>
-    windowing_scheme = WindowingScheme()
+    windowing_scheme = WindowingScheme(taper_family="hamming", num_samples_window=256, num_samples_overlap=128)
+    windowed_obj = windowing_scheme.apply_sliding_window(pkd_mvts.dataset)
+    print("windowed_obj", windowed_obj)
+
+    tapered_obj = windowing_scheme.apply_taper(windowed_obj)
+    print("tapered_obj", tapered_obj)
+    print("ADD A FLAG TO THESE SO YOU KNOW IF TAPER IS APPLIED OR NOT")
+
+    fft_obj = windowing_scheme.apply_fft(tapered_obj, pkd_mvts.sample_rate)
+    print("fft_obj", fft_obj)
+
+    abs_spectrum = np.abs(fft_obj.hx_pkd.data)
+    mean_spectrum = np.mean(abs_spectrum, axis=0)
+#    mean_spectrum = fft_obj.hx_pkd.data.mean(axis=0)
+    #log_spectrum = np.log10(mean_spectrum)
+    import scipy.signal as ssig
+
+    plt.loglog(fft_obj.hx_pkd.frequency.data[1:], np.abs(mean_spectrum[1:]), )
+    plt.grid(True, which="both", ls="-")
+    plt.show()
     #</DEFINE WINDOWING/TAPER PARAMETERS>
     print("try to combine these runs")
 

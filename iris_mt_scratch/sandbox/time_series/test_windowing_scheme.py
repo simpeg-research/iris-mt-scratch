@@ -132,7 +132,8 @@ def test_fourier_transform():
     ds = get_xarray_dataset(N=10000, sps=sampling_rate)
     windowed_dataset = windowing_scheme.apply_sliding_window(ds)
     tapered_windowed_dataset = windowing_scheme.apply_taper(windowed_dataset)
-    stft = fft_xr_ds(tapered_windowed_dataset, sampling_rate)
+    #stft = fft_xr_ds(tapered_windowed_dataset, sampling_rate)
+    stft = windowing_scheme.apply_fft(tapered_windowed_dataset, sampling_rate)
     #import matplotlib.pyplot as plt
     #plt.plot(stft.frequency.data, np.abs(stft["hx"].data.mean(axis=0)))
     print("ok")

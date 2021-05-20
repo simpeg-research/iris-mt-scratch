@@ -80,10 +80,13 @@ class WindowingScheme(ApodizationWindow):
     of some composition of time series and windowing scheme.
 
     Seems like there is actually a Taper class that underlies this ... which has num_samples_taper, num
+
+    kwargs:
+
     """
     def __init__(self, **kwargs):
         super(WindowingScheme, self).__init__(**kwargs)
-        self.num_samples_overlap = kwargs.get("num_samples_overlap", None)
+        self.num_samples_overlap = kwargs.get("num_samples_overlap", None) #make this 75% of num_samples_window by default
         self.striding_function_label = kwargs.get("striding_function_label", "crude")
         self._left_hand_window_edge_indices = None
         #self.sampling_rate = kwargs.get('sampling_rate', None)
@@ -283,7 +286,7 @@ class WindowingScheme(ApodizationWindow):
         np.fft.fftfreq(self.num_samples_window, d=dt)
         pass
 
-    def apply_fft(self):
+    def apply_fft(self, data, sample_rate):
         """
         lets assume we have already applied sliding window and taper.
         Things to think about:
@@ -293,8 +296,13 @@ class WindowingScheme(ApodizationWindow):
         -------
 
         """
-        print("call fft_xr_ds")
-        pass
+        #ONLY SUPPORTS DATASET AT THIS POINT
+        if isinstance(data, xr.Dataset):
+            spectral_ds = fft_xr_ds(data, sample_rate)
+        else:
+            print(f"fft of {type(data)} not yet supported")
+            raise Exception
+        return  spectral_ds
 
 #<PROPERTIES THAT NEED SAMPLING RATE>
 #these may be moved elsewhere later
@@ -322,7 +330,7 @@ class WindowingScheme(ApodizationWindow):
 
 
 
-def fft_xr_ds(dataset, sps):
+def fft_xr_ds(dataset, sample_rate):
     """
     assume you have an xr.dataset or xr.DataArray.  It is 2D.
     This chould call window_helpers.apply_fft_to_windowed_array
@@ -344,7 +352,7 @@ def fft_xr_ds(dataset, sps):
     key0 = list(dataset.keys())[0]
     n_windows, samples_per_window = dataset[key0].data.shape
     n_fft_harmonics = int(samples_per_window / 2)  # when len(window) is odd this is 1 sample shy
-    dt = 1. / sps
+    dt = 1. / sample_rate
     harmonic_frequencies = np.fft.fftfreq(samples_per_window, d=dt)
     for key in dataset.keys():
         print(f"key {key}")
@@ -352,9 +360,8 @@ def fft_xr_ds(dataset, sps):
         window_means = data.mean(axis=operation_axis)
         demeaned_data = (data.T - window_means).T
         fspec_array = np.fft.fft(demeaned_data, axis=1)
-        frequencies = np.fft.fftfreq(128, d=dt)
         xrd = xr.DataArray(fspec_array[:,0:n_fft_harmonics], dims=["time", "frequency"],
-                           coords={"frequency": frequencies[0:n_fft_harmonics],
+                           coords={"frequency": harmonic_frequencies[0:n_fft_harmonics],
                                    "time": dataset.time.data})
         output_ds.update({key:xrd})
     return output_ds
