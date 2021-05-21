@@ -15,16 +15,28 @@ def get_experiment_from_xml(xml):
     return experiment
 
 
-def get_filters_dict_from_experiment(experiment):
-    print(experiment, type(experiment))
+def get_filters_dict_from_experiment(experiment, verbose=False):
+    """
+    Only takes the zero'th survey, we will need to index surveys eventually
+    Parameters
+    ----------
+    experiment
+    verbose
+
+    Returns
+    -------
+
+    """
     surveys = experiment.surveys
     survey = surveys[0]
-    print("Survey Filters", survey.filters)
     survey_filters = survey.filters
-    filter_keys = list(survey_filters.keys())
-    print("FIlter keys", filter_keys)
-    for filter_key in filter_keys:
-        print(filter_key, survey_filters[filter_key])
+    if verbose:
+        print(experiment, type(experiment))
+        print("Survey Filters", survey.filters)
+        filter_keys = list(survey_filters.keys())
+        print("FIlter keys", filter_keys)
+        for filter_key in filter_keys:
+            print(filter_key, survey_filters[filter_key])
     return survey_filters
 
 def filter_control_example(xml_path=None):
@@ -48,11 +60,25 @@ def filter_control_example(xml_path=None):
         #xml_path = STATIONXML_02
     experiment = get_experiment_from_xml(xml_path)
     filter_dict = get_filters_dict_from_experiment(experiment)
-    my_filter = filter_dict[list(filter_dict.keys())[0]]
-    frq = np.arange(5)+1.2
-    response = my_filter.complex_response(frq)
-    print("response", response)
+    frq = np.arange(5) + 1.2
+    filter_keys = list(filter_dict.keys())
+    for key in filter_keys:
+        my_filter = filter_dict[key]
+        response = my_filter.complex_response(frq)
+        print(f"{key} response", response)
 
     for key in filter_dict.keys():
         print(f"key = {key}")
     print("OK")
+
+
+
+def test_filter_stages():
+    """
+    Sanity check to look at each stage of the filters.  Just want to look at their spectra for now,
+    input/output units should be added also, but the belongs in MTH5 or mt_metadata
+    Returns
+    -------
+
+    """
+    pass

@@ -19,12 +19,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
-from iris_metadata_ingest_helpers import filter_control_example
-from iris_metadata_ingest_helpers import get_experiment_from_xml
+
 from iris_mt_scratch.sandbox.io_helpers.generate_pkdsao_test_data import get_station_xml_filename
 # from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_array_list
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data
+from iris_mt_scratch.sandbox.time_series.iris_metadata_ingest_helpers import filter_control_example
+from iris_mt_scratch.sandbox.time_series.iris_metadata_ingest_helpers import get_experiment_from_xml
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import HEXY
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import cast_run_to_run_ts
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import embed_metadata_into_run
@@ -34,9 +35,9 @@ from iris_mt_scratch.sandbox.time_series.windowing_scheme import WindowingScheme
 
 def set_driver_parameters():
     driver_parameters = {}
-    driver_parameters["create_xml"] = False
-    driver_parameters["test_filter_control"] = True
-    driver_parameters["run_ts_from_xml_01"] = False #True
+    driver_parameters["create_xml"] = 1#False
+    driver_parameters["test_filter_control"] = 0#True
+    driver_parameters["run_ts_from_xml_01"] = 1#False #True
     driver_parameters["run_ts_from_xml_02"] = False
     driver_parameters["run_ts_from_xml_03"] = False
     driver_parameters["initialize_data"] = True
@@ -44,27 +45,37 @@ def set_driver_parameters():
 
 
 def main():
+    """
+    XML with FAP is here:
+    https://service.iris.edu/fdsnwsbeta/station/1/query?net=EM&sta=FL001&cha=MFN&level=response&format=xml&includecomments=true&nodata=404
+
+
+    
+    Returns
+    -------
+
+    """
     driver_parameters = set_driver_parameters()
     #<CREATE METADATA XML>
     if driver_parameters["create_xml"]:
-        experiment = get_mth5_experiment_from_iris("PKD", save_experiment_xml=True)
         experiment = get_mth5_experiment_from_iris("SAO", save_experiment_xml=True)
+        experiment = get_mth5_experiment_from_iris("PKD", save_experiment_xml=True)
     #</CREATE METADATA XML>
 
     #<TEST FILTER CONTROL>
     if driver_parameters["test_filter_control"]:
-        filter_control_example()
+        #filter_control_example()
         filter_control_example(xml_path=get_station_xml_filename("PKD"))
     #</TEST FILTER CONTROL>
 
 
     #<TEST RunTS FROM XML>
     if driver_parameters["run_ts_from_xml_01"]:
-        run = embed_metadata_into_run("PKD")
+        run_obj = embed_metadata_into_run("PKD")
         array_list = get_example_array_list(components_list=HEXY,
                                             load_actual=True,
                                             station_id="PKD")
-        runts_object = cast_run_to_run_ts(run, array_list=array_list)
+        runts_object = cast_run_to_run_ts(run_obj, array_list=array_list)
     #</TEST RunTS FROM XML>
 
     #<INITIALIZE DATA>
@@ -80,7 +91,10 @@ def main():
     windowed_obj = windowing_scheme.apply_sliding_window(pkd_mvts.dataset)
     tapered_obj = windowing_scheme.apply_taper(windowed_obj)
     fft_obj = windowing_scheme.apply_fft(tapered_obj, pkd_mvts.sample_rate)
-    #print(len)
+        #<CALIBRATION>
+    filters_dict = experiment.surveys[0].filters
+    #experiment.surveys[0].filters
+
     #frq = fft_obj.hx_pkd.frequency.data[1:]
 
     plt.loglog(fft_obj.hx_pkd.frequency.data[1:].squeeze(), np.abs(fft_obj.hx_pkd.data[:,1:].squeeze()), )
