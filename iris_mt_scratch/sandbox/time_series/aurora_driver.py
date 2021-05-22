@@ -85,10 +85,6 @@ def main():
         #experiment = get_mth5_experiment_from_iris("PKD", save_experiment_xml=True)
         run_obj = embed_metadata_into_run("PKD")
         pkd_mvts = get_example_data(station_id="PKD", component_station_label=False)
-#        sao_mvts = get_example_data(station_id="SAO")
-#        pkd = pkd_mvts.dataset
-#        sao = sao_mvts.dataset
-#        sao.update(pkd)
     #</INITIALIZE DATA>
 
     #<PROCESS DATA>

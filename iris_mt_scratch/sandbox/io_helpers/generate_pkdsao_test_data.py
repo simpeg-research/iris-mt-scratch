@@ -72,39 +72,6 @@ def iris_metadata_access_via_wget():
     return
 
 
-def IRISDataAccessExample():
-    """
-    This function needs to be factored to remove duplication.
-    Note it is composed of 3 parts
-    1. It gets an iris inventory (this is also a fcn in xml_sandbox --get_response_inventory_from_iris())
-    2. It cycles through the SNCL and blubs some info, adding stage names if needed
-    describe_inventory_stages() does this
-    3. It casts the inventory to an Experiement()
-    Returns
-    -------
-
-    """
-    from obspy.clients.fdsn import Client
-    from obspy import UTCDateTime
-    from obspy import read_inventory
-
-    starttime = UTCDateTime("2004-03-14T14:20:00")
-    endtime = UTCDateTime("2004-03-17T00:00:00")
-
-    # Read inventory foerm IRIS Client
-    inventory = get_response_inventory_from_iris(network="BK", station="PKD", channel="LQ2,LQ3,LT1,LT2",
-                                                  starttime=starttime, endtime=endtime)
-
-    describe_inventory_stages(inventory, assign_names=True)
-    describe_inventory_stages(inventory, assign_names=False)
-
-    from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
-
-    translator = XMLInventoryMTExperiment()
-    experiment = translator.xml_to_mt(inventory_object=inventory)
-    print("supposedly we have an inventory now ... check it")
-
-    return
 
 def cast_data_to_archive(case_id=None):
     """

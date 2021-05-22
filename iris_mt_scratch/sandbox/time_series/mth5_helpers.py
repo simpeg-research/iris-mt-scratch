@@ -21,8 +21,6 @@ from pathlib import Path
 import xarray as xr
 
 #from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
-from iris_mt_scratch.sandbox.io_helpers.test_data import get_channel
-from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_array_list
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data
 from iris_mt_scratch.sandbox.io_helpers.generate_pkdsao_test_data import get_station_xml_filename
 from iris_mt_scratch.sandbox.xml.xml_sandbox import describe_inventory_stages
@@ -81,7 +79,7 @@ def get_experiment_from_xml(xml):
     print(experiment, type(experiment))
     return experiment
 
-def cast_obspy_inventory_to_mth5_experiement(inventory):
+def cast_obspy_inventory_to_mth5_experiment(inventory):
     translator = XMLInventoryMTExperiment()
     experiment = translator.xml_to_mt(inventory_object=inventory)
     return experiment
@@ -89,9 +87,14 @@ def cast_obspy_inventory_to_mth5_experiement(inventory):
 
 def get_mth5_experiment_from_iris(station_id, save_experiment_xml=False):
     """
-    This function has several stages
-    1. using default parameters specific to PKD it gets an inventory from IRIS
-    2.
+    his function needs to be factored to remove duplication.
+    Note it is composed of 3 parts
+    1. It gets an iris inventory (this is also a fcn in xml_sandbox --get_response_inventory_from_iris())
+    2. It cycles through the SNCL and blubs some info, adding stage names if needed
+    describe_inventory_stages() does this
+    3. It casts the inventory to an Experiement()
+    Returns experiment
+
     gets metadata from IRIS as station_xml and then uses obspy to cast this
     as an "Inventory()" obspy.core.inventory.inventory.Inventory
     The inventory is then cast to an "Experiment()" and the experiment is returned.
@@ -125,12 +128,12 @@ def get_mth5_experiment_from_iris(station_id, save_experiment_xml=False):
                                         starttime=starttime,
                                         endtime = endtime,
                                         )
-
+    inventory
     print("Add sensor name here")
     describe_inventory_stages(inventory, assign_names=True)
     print("NETWORKS REASSIGNED")
     describe_inventory_stages(inventory, assign_names=False)
-    experiment = cast_obspy_inventory_to_mth5_experiement(inventory)
+    experiment = cast_obspy_inventory_to_mth5_experiment(inventory)
 
     if save_experiment_xml:
         output_xml_path = get_station_xml_filename(station_id)
@@ -336,16 +339,7 @@ def main():
 
 
     #<TEST RunTS FROM XML>
-        # <METHOD1>
-    if driver_parameters["run_ts_from_xml_01"]:
-        run = embed_metadata_into_run("PKD")
-        array_list = get_example_array_list(components_list=HEXY,
-                                            load_actual=True,
-                                            station_id="PKD")
-        runts_object = cast_run_to_run_ts(run, array_list=array_list)
-                                          #station_id="PKD")
-        # </METHOD1>
-
+    #method 1 is in aurora driver
         # <METHOD2>
     if driver_parameters["run_ts_from_xml_02"]:
         pkd_xml = get_station_xml_filename("PKD")
@@ -362,8 +356,8 @@ def main():
 
     #<INITIALIZE DATA>
     if driver_parameters["initialize_data"]:
-        pkd_mvts = get_example_data(station_id="PKD")
-        sao_mvts = get_example_data(station_id="SAO")
+        pkd_mvts = get_example_data(station_id="PKD", component_station_label=True)
+        sao_mvts = get_example_data(station_id="SAO", component_station_label=True)
         pkd = pkd_mvts.dataset
         sao = sao_mvts.dataset
         pkd.update(sao)
