@@ -21,15 +21,15 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-#import scipy.signal as ssig
+import scipy.signal as ssig
 import xarray as xr
 
 from iris_mt_scratch.sandbox.io_helpers.generate_pkdsao_test_data import get_station_xml_filename
 # from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_array_list
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data
-from iris_mt_scratch.sandbox.time_series.iris_metadata_ingest_helpers import filter_control_example
-from iris_mt_scratch.sandbox.time_series.iris_metadata_ingest_helpers import get_experiment_from_xml
+from iris_mt_scratch.sandbox.time_series.mth5_helpers import cast_run_to_run_ts
+from iris_mt_scratch.sandbox.time_series.mth5_helpers import get_experiment_from_xml
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import HEXY
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import cast_run_to_run_ts
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import check_run_channels_have_expected_properties
@@ -41,7 +41,6 @@ from iris_mt_scratch.sandbox.time_series.windowing_scheme import WindowingScheme
 def set_driver_parameters():
     driver_parameters = {}
     driver_parameters["create_xml"] = 0#False
-    driver_parameters["test_filter_control"] = 0#True
     driver_parameters["run_ts_from_xml_01"] = False #True
     driver_parameters["run_ts_from_xml_02"] = False
     driver_parameters["run_ts_from_xml_03"] = False
@@ -75,12 +74,6 @@ def main():
         experiment = get_mth5_experiment_from_iris("PKD", save_experiment_xml=True)
     #</CREATE METADATA XML>
 
-    #<TEST FILTER CONTROL>
-    if driver_parameters["test_filter_control"]:
-        #filter_control_example()
-        filter_control_example(xml_path=get_station_xml_filename("PKD"))
-    #</TEST FILTER CONTROL>
-
 
     #<TEST RunTS FROM XML>
     if driver_parameters["run_ts_from_xml_01"]:
@@ -111,7 +104,7 @@ def main():
 
     #LOOP OVER CHANNELS
     #add default flag for dropping DC
-    SHOW_RESPONSE_FUNCTIONS = False
+    SHOW_RESPONSE_FUNCTIONS = True
     for key in fft_obj.data_vars.keys():
         print(f"{key}")
         channel = run_obj.get_channel(key)
@@ -142,7 +135,8 @@ def main():
             plt.legend()
             plt.title(f"Calibration Response Functions {key}")
             plt.xlabel("Frequency (Hz)")
-            plt.xlabel("Normalized Response (Hz)")
+            plt.ylabel("Response nT/sqrt(Hz)")
+            plt.savefig(f"{key}_response_function_comparison_emifap_vs_pz.png")
             plt.show()
         # </CF RESPONSES>
 
@@ -152,7 +146,8 @@ def main():
         plt.legend()
         plt.title(f"Normalized Calibration Response Functions {key}")
         plt.xlabel("Frequency (Hz)")
-        plt.xlabel("Normalized Response (Hz)")
+        plt.ylabel("Normalized Response (Hz)")
+        plt.savefig(f"{key}_normalized_response_function_comparison_emifap_vs_pz.png")
         plt.show()
         # </CF NORMALIZED RESPONSES>
 
@@ -165,7 +160,7 @@ def main():
 
         if n_smooth:
             import scipy.signal as ssig
-            #smooth_calibrated_data_pz = ssig.medfilt(calibrated_data_pz, 13)
+            smooth_calibrated_data_pz = ssig.medfilt(calibrated_data_pz, n_smooth)
             smooth_calibrated_data_fap = ssig.medfilt(calibrated_data_fap, n_smooth)
         if show_raw:
             plt.loglog(frequencies, calibrated_data_pz, color='b', label='pole-zero')
@@ -178,7 +173,8 @@ def main():
         plt.grid(True, which="both", ls="-")
         plt.title(f"Calibrated Spectra {key}")
         plt.xlabel("Frequency (Hz)")
-        plt.xlabel("nT/sqrt(Hz)")
+        plt.ylabel("nT/sqrt(Hz)")
+        plt.savefig("calibrated_spectra_comparison_emifap_vs_pz.png")
         plt.show()
 
 

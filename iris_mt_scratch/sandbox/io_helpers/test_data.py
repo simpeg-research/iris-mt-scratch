@@ -1,3 +1,14 @@
+"""
+TEST DATASET DEFINITIONS:
+pkd_test_00:
+  network = "BK"
+    starttime = UTCDateTime("2004-09-28T00:00:00")
+    endtime = UTCDateTime("2004-09-28T23:59:59")
+    channel_codes = "LQ2,LQ3,LT1,LT2"
+    channel_codes = "BQ2,BQ3,BT1,BT2"
+"""
+
+
 import datetime
 import numpy as np
 import pandas as pd
@@ -7,6 +18,27 @@ from mth5.timeseries.run_ts import RunTS
 from mth5.utils.pathing import DATA_DIR
 
 HEXY = ['hx','hy','ex','ey'] #default components list
+
+class TestDataSet(object):
+    """
+    Need:
+    iris_metadata_parameters
+    data_parameters (how to rover, or load from local)
+
+
+    """
+    def __init__(self):
+        self.network = None
+        self.station = None
+        self.channels = None
+        self.start_time = None
+        self.end_time = None
+
+    def get_xml_from_iris(self):
+        pass
+    def get_data_via_rover(self):
+        pass
+
 
 class TestDataHelper(object):
     def __init__(self, **kwargs):

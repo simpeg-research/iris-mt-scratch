@@ -20,7 +20,7 @@ import pandas as pd
 from pathlib import Path
 import xarray as xr
 
-from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
+#from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_channel
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_array_list
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data
@@ -35,20 +35,51 @@ from mth5.timeseries.channel_ts import ChannelTS
 from mth5.timeseries.run_ts import RunTS
 from mth5.utils.pathing import DATA_DIR
 
-from iris_metadata_ingest_helpers import filter_control_example
-from iris_metadata_ingest_helpers import get_experiment_from_xml
 #TEST_DATA_HELPER = TestDataHelper(dataset_id="PKD_SAO_2004_272_00-2004_272_02")
 HEXY = ['hx','hy','ex','ey'] #default components list
 xml_path = Path("/home/kkappler/software/irismt/mt_metadata/data/xml")
 magnetic_xml_template = xml_path.joinpath("mtml_magnetometer_example.xml")
 electric_xml_template = xml_path.joinpath("mtml_electrode_example.xml")
-single_station_xml_template = STATIONXML_02 # Fails for "no survey key"
-single_station_xml_template = Path("single_station_mt.xml")
+#single_station_xml_template = STATIONXML_02 # Fails for "no survey key"
+#single_station_xml_template = Path("single_station_mt.xml")
 
 
 #<LOAD SOME DATA FROM A SINGLE STATION>
 N = 288000#86400
 #DEFAULT_SAMPLING_RATE = 40.0#1.0
+
+
+def get_filters_dict_from_experiment(experiment, verbose=False):
+    """
+    MTH5 HELPER
+    Only takes the zero'th survey, we will need to index surveys eventually
+    Parameters
+    ----------
+    experiment
+    verbose
+
+    Returns
+    -------
+
+    """
+    surveys = experiment.surveys
+    survey = surveys[0]
+    survey_filters = survey.filters
+    if verbose:
+        print(experiment, type(experiment))
+        print("Survey Filters", survey.filters)
+        filter_keys = list(survey_filters.keys())
+        print("FIlter keys", filter_keys)
+        for filter_key in filter_keys:
+            print(filter_key, survey_filters[filter_key])
+    return survey_filters
+
+def get_experiment_from_xml(xml):
+    xml_path = Path(xml)
+    experiment = Experiment()
+    experiment.from_xml(fn=xml_path)
+    print(experiment, type(experiment))
+    return experiment
 
 def cast_obspy_inventory_to_mth5_experiement(inventory):
     translator = XMLInventoryMTExperiment()
@@ -58,6 +89,9 @@ def cast_obspy_inventory_to_mth5_experiement(inventory):
 
 def get_mth5_experiment_from_iris(station_id, save_experiment_xml=False):
     """
+    This function has several stages
+    1. using default parameters specific to PKD it gets an inventory from IRIS
+    2.
     gets metadata from IRIS as station_xml and then uses obspy to cast this
     as an "Inventory()" obspy.core.inventory.inventory.Inventory
     The inventory is then cast to an "Experiment()" and the experiment is returned.
@@ -132,6 +166,8 @@ def test_experiment_from_station_xml():
 
     """
     from mt_metadata.utils import STATIONXML_02
+    single_station_xml_template = STATIONXML_02  # Fails for "no survey key"
+    #single_station_xml_template = Path("single_station_mt.xml")
     translator = XMLInventoryMTExperiment()
     mt_experiment = translator.xml_to_mt(stationxml_fn=STATIONXML_02)
     return
@@ -213,6 +249,61 @@ def cast_run_to_run_ts(run, array_list=None, station_id=None):
 
 
 
+
+def filter_control_example(xml_path=None):
+    """
+    This has two stages:
+    1. reads an xml
+    2. casts to experiement
+    3. does filter tests.
+    The filter tests all belong in MTH5 Helpers.
+    Loads an xml file and casts it to experiment.  Iterates over the filter objects to
+    confirm that these all registered properly and are accessible.  Evaluates
+    each filter at a few frequencies to confirm response function works
+
+    ToDo: Access "single_station_mt.xml" from metadata repository
+    Parameters
+    ----------
+    xml_path
+
+    Returns
+    -------
+
+    """
+    if xml_path is None:
+        print("WHY is this not working when I reference the STATIONXML_02?")
+        xml_path = Path("single_station_mt.xml")
+        #xml_path = STATIONXML_02
+    experiment = get_experiment_from_xml(xml_path)
+    filter_dict = get_filters_dict_from_experiment(experiment)
+    frq = np.arange(5) + 1.2
+    filter_keys = list(filter_dict.keys())
+    for key in filter_keys:
+        my_filter = filter_dict[key]
+        response = my_filter.complex_response(frq)
+        print(f"{key} response", response)
+
+    for key in filter_dict.keys():
+        print(f"key = {key}")
+    print("OK")
+
+
+
+def test_filter_stages():
+    """
+    Sanity check to look at each stage of the filters.  Just want to look at their spectra for now,
+    input/output units should be added also, but the belongs in MTH5 or mt_metadata
+    Returns
+    -------
+
+    """
+    pass
+
+
+def test_filter_control():
+    print("move this from driver")
+    pass
+
 #</LOAD SOME DATA FROM A SINGLE STATION>
 
 def set_driver_parameters():
@@ -227,7 +318,7 @@ def set_driver_parameters():
 
 
 def main():
-    test_experiment_from_station_xml()
+    #test_experiment_from_station_xml()
 
     driver_parameters = set_driver_parameters()
     #<CREATE METADATA XML>
