@@ -105,6 +105,9 @@ def main():
     #LOOP OVER CHANNELS
     #add default flag for dropping DC
     SHOW_RESPONSE_FUNCTIONS = True
+    PNG_PATH = Path("~/").expanduser().joinpath(".cache", "iris_mt", "png")
+    PNG_PATH.mkdir(parents=True, exist_ok=True)
+
     for key in fft_obj.data_vars.keys():
         print(f"{key}")
         channel = run_obj.get_channel(key)
@@ -136,7 +139,8 @@ def main():
             plt.title(f"Calibration Response Functions {key}")
             plt.xlabel("Frequency (Hz)")
             plt.ylabel("Response nT/sqrt(Hz)")
-            plt.savefig(f"{key}_response_function_comparison_emifap_vs_pz.png")
+            png_name = f"{key}_response_function_comparison_emifap_vs_pz.png"
+            plt.savefig(PNG_PATH.joinpath(png_name))
             plt.show()
         # </CF RESPONSES>
 
@@ -147,7 +151,8 @@ def main():
         plt.title(f"Normalized Calibration Response Functions {key}")
         plt.xlabel("Frequency (Hz)")
         plt.ylabel("Normalized Response (Hz)")
-        plt.savefig(f"{key}_normalized_response_function_comparison_emifap_vs_pz.png")
+        png_name = f"{key}_normalized_response_function_comparison_emifap_vs_pz.png"
+        plt.savefig(PNG_PATH.joinpath(png_name))
         plt.show()
         # </CF NORMALIZED RESPONSES>
 
@@ -174,7 +179,8 @@ def main():
         plt.title(f"Calibrated Spectra {key}")
         plt.xlabel("Frequency (Hz)")
         plt.ylabel("nT/sqrt(Hz)")
-        plt.savefig("calibrated_spectra_comparison_emifap_vs_pz.png")
+        png_name = f"{key}_calibrated_spectra_comparison_emifap_vs_pz.png"
+        plt.savefig(PNG_PATH.joinpath(png_name))
         plt.show()
 
 
