@@ -46,7 +46,8 @@ class TestDataHelper(object):
 
 DEFAULT_SAMPLING_RATE = 40.0
 DEFAULT_START_TIME = datetime.datetime(2004, 9, 28, 0, 0, 0)
-def get_channel(component, station_id="", start=None, sampling_rate=None, load_actual=True ):
+def get_channel(component, station_id="", start=None, sampling_rate=None, load_actual=True,
+                component_station_label=False):
     """
     One off - specifically for loading PKD and SAO data for May 24th spectral tests.
     Move this into either io_helpers or into
@@ -90,29 +91,34 @@ def get_channel(component, station_id="", start=None, sampling_rate=None, load_a
     ch.station_metadata.id = station_id
 
     ch.run_metadata.id = "001"#'MT001a'
-
-    component_string = "_".join([component,station_id,])
-    ch.component = component_string
+    if component_station_label:
+        component_string = "_".join([component,station_id,])
+        ch.component = component_string
+    else:
+        ch.component = component
 
     return ch
 
 
 
-def get_example_array_list(components_list=None, load_actual=True, station_id=None):
+def get_example_array_list(components_list=None, load_actual=True, station_id=None, component_station_label=False):
     array_list = []
     for component in components_list:
         channel = get_channel(component,
                               station_id=station_id,
-                              load_actual=load_actual)
+                              load_actual=load_actual,
+                              component_station_label=component_station_label)
         array_list.append(channel)
     return array_list
 
 
 def get_example_data(components_list=HEXY,
                      load_actual=True,
-                     station_id=None):
+                     station_id=None,
+                     component_station_label=False):
     array_list = get_example_array_list(components_list=components_list,
                                         load_actual=load_actual,
-                                        station_id=station_id)
+                                        station_id=station_id,
+                                        component_station_label=component_station_label)
     mvts = RunTS(array_list=array_list)
     return mvts

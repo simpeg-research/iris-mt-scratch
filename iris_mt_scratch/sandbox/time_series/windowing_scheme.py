@@ -377,7 +377,7 @@ def spectral_density_calibration_factor(coherent_gain, enbw, dt, N):
     spectral_density_calibration_factor = (1./coherent_gain)*np.sqrt((2*dt)/(enbw*N))
     return spectral_density_calibration_factor
 
-def fft_xr_ds(dataset, sample_rate, one_sided=True):
+def fft_xr_ds(dataset, sample_rate, one_sided=True, detrend=True):
     """
     assume you have an xr.dataset or xr.DataArray.  It is 2D.
     This chould call window_helpers.apply_fft_to_windowed_array
@@ -408,6 +408,10 @@ def fft_xr_ds(dataset, sample_rate, one_sided=True):
         data = dataset[key].data
         window_means = data.mean(axis=operation_axis)
         demeaned_data = (data.T - window_means).T
+        if detrend:
+            import scipy.signal as ssig
+            ssig.detrend(demeaned_data, axis=1, overwrite_data=True)
+
         print("MAY NEED TO ADD DETRENDING OR PREWHITENING HERE AS PREP FOR FFT")
         fspec_array = np.fft.fft(demeaned_data, axis=1)
         if one_sided:

@@ -21,6 +21,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+#import scipy.signal as ssig
 import xarray as xr
 
 from iris_mt_scratch.sandbox.io_helpers.generate_pkdsao_test_data import get_station_xml_filename
@@ -88,9 +89,9 @@ def main():
 
     #<INITIALIZE DATA AND METADATA>
     if driver_parameters["initialize_data"]:
-        experiment = get_mth5_experiment_from_iris("PKD", save_experiment_xml=True)
+        #experiment = get_mth5_experiment_from_iris("PKD", save_experiment_xml=True)
         run_obj = embed_metadata_into_run("PKD")
-        pkd_mvts = get_example_data(station_id="PKD")
+        pkd_mvts = get_example_data(station_id="PKD", component_station_label=False)
 #        sao_mvts = get_example_data(station_id="SAO")
 #        pkd = pkd_mvts.dataset
 #        sao = sao_mvts.dataset
@@ -106,54 +107,97 @@ def main():
     windowed_obj = windowing_scheme.apply_sliding_window(pkd_mvts.dataset)
     tapered_obj = windowing_scheme.apply_taper(windowed_obj)
     fft_obj = windowing_scheme.apply_fft(tapered_obj)
-    frequencies = fft_obj.hx_pkd.frequency.data[1:]
-    
+    frequencies = fft_obj.frequency.data[1:]
+
     #LOOP OVER CHANNELS
+    #add default flag for dropping DC
+    SHOW_RESPONSE_FUNCTIONS = False
     for key in fft_obj.data_vars.keys():
         print(f"{key}")
         channel = run_obj.get_channel(key)
+        # <PZRSP>
         pz_calibration_response = channel.channel_response_filter.complex_response(frequencies)
-        raw_spectra = np.abs(fft_obj.channel.data[:,1:])
-        raw_spectra = raw_spectra.squeeze()#only for full window - need to recognize this or workaround
-        hx_spectral_density = spectral_calibration*raw_hx_spectra
-    frequencies = frequencies[1:]
-    calibration_response = calibration_response[1:]
-    abs_px_resp = np.abs(calibration_response)
-    norm_cal_resp = abs_px_resp/np.max(abs_px_resp)
+        abs_pz_calibration_response = np.abs(pz_calibration_response)
+        max_pz_calibration_response = np.max(abs_pz_calibration_response)
+        norm_pz_calibration_response = abs_pz_calibration_response / max_pz_calibration_response
+        # </PZRSP>
 
-    from instrument import DeployedInstrument
-    from instrument import Instrument
-    bf4 = Instrument(make="emi", model="bf4", serial_number=9819, channel=0,epoch=0)
-    hx_instrument = DeployedInstrument(sensor=bf4)
-    hx_instrument.get_response_function()
-    bf4_resp = hx_instrument.response_function(frequencies)
-    abs_bf4_resp = np.abs(bf4_resp)
-    norm_bf4_resp = bf4_resp/np.max(abs_bf4_resp)
-
-    plt.loglog(frequencies, norm_cal_resp, label='pz')
-    plt.loglog(frequencies, norm_bf4_resp, label='fap')
-    plt.title("Calibration Response Function")
-    plt.show()
+        # <FAP RSP>
+        from instrument import DeployedInstrument
+        from instrument import Instrument
+        bf4 = Instrument(make="emi", model="bf4", serial_number=9819, channel=0, epoch=0)
+        hx_instrument = DeployedInstrument(sensor=bf4)
+        hx_instrument.get_response_function()
+        bf4_resp = hx_instrument.response_function(frequencies)
+        bf4_resp *= 421721.0
+        abs_bf4_resp = np.abs(bf4_resp)
+        norm_bf4_resp = bf4_resp / np.max(abs_bf4_resp)
+        # </FAP RSP>
 
 
-    # plt.loglog(frequencies, np.abs(calibration_response), label='pz')
-    # plt.loglog(frequencies, np.abs(bf4_resp), label='fap')
-    # plt.title("Calibration Response Function")
-    # plt.show()
+        # <CF RESPONSES>
+        if SHOW_RESPONSE_FUNCTIONS:
+            plt.loglog(frequencies, abs_pz_calibration_response, label='pole-zero')
+            plt.loglog(frequencies, abs_bf4_resp, label='fap EMI')
+            plt.legend()
+            plt.title(f"Calibration Response Functions {key}")
+            plt.xlabel("Frequency (Hz)")
+            plt.xlabel("Normalized Response (Hz)")
+            plt.show()
+        # </CF RESPONSES>
+
+        # <CF NORMALIZED RESPONSES>
+        plt.loglog(frequencies, norm_pz_calibration_response, label='pole-zero')
+        plt.loglog(frequencies, norm_bf4_resp, label='fap EMI')
+        plt.legend()
+        plt.title(f"Normalized Calibration Response Functions {key}")
+        plt.xlabel("Frequency (Hz)")
+        plt.xlabel("Normalized Response (Hz)")
+        plt.show()
+        # </CF NORMALIZED RESPONSES>
+
+        n_smooth = 131
+        show_raw = 0
+        raw_spectral_density = np.abs(fft_obj[key].data[:,1:])
+        raw_spectral_density = raw_spectral_density.squeeze()#only for full window - need to recognize this or workaround
+        calibrated_data_pz = raw_spectral_density / abs_pz_calibration_response
+        calibrated_data_fap = raw_spectral_density / abs_bf4_resp
+
+        if n_smooth:
+            import scipy.signal as ssig
+            #smooth_calibrated_data_pz = ssig.medfilt(calibrated_data_pz, 13)
+            smooth_calibrated_data_fap = ssig.medfilt(calibrated_data_fap, n_smooth)
+        if show_raw:
+            plt.loglog(frequencies, calibrated_data_pz, color='b', label='pole-zero')
+            plt.loglog(frequencies, calibrated_data_fap, color='r', label='fap EMI')
+        if n_smooth:
+#            plt.loglog(frequencies, smooth_calibrated_data_pz, color='b', label='smooth pole-zero')
+            plt.loglog(frequencies, smooth_calibrated_data_fap, color='r', label='fap EMI')
+
+        plt.legend()
+        plt.grid(True, which="both", ls="-")
+        plt.title(f"Calibrated Spectra {key}")
+        plt.xlabel("Frequency (Hz)")
+        plt.xlabel("nT/sqrt(Hz)")
+        plt.show()
+
+
+
+
         #<CALIBRATION>
     filters_dict = experiment.surveys[0].filters
     #run_obj.get_channel('hx').channel_response_filter.filters_list
 
 
-    plt.loglog(frequencies, raw_hx_spectra)
-    plt.show()
-
-    calibrated_data = spectral_calibration *np.abs(hx_spectral_density) / calibration_response[1:]
-    #calibrated_data = spectral_calibration * np.abs(fft_obj.hx_pkd.data[:, 1]).squeeze() / calibration_response[1:]
-    plt.loglog(frequencies[1:], calibrated_data)
-    plt.ylabel("nT/sqrt(Hz)")
-    plt.title("Calibrated spectra")
-    plt.show()
+    # plt.loglog(frequencies, raw_hx_spectra)
+    # plt.show()
+    #
+    # calibrated_data = spectral_calibration *np.abs(hx_spectral_density) / calibration_response[1:]
+    # #calibrated_data = spectral_calibration * np.abs(fft_obj.hx_pkd.data[:, 1]).squeeze() / calibration_response[1:]
+    # plt.loglog(frequencies[1:], calibrated_data)
+    # plt.ylabel("nT/sqrt(Hz)")
+    # plt.title("Calibrated spectra")
+    # plt.show()
     #<DEFINE WINDOWING/TAPER PARAMETERS>
     windowing_scheme = WindowingScheme(taper_family="hamming", num_samples_window=256, num_samples_overlap=64)
     windowed_obj = windowing_scheme.apply_sliding_window(pkd_mvts.dataset)
