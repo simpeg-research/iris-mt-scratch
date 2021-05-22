@@ -116,8 +116,8 @@ def main():
         # </PZRSP>
 
         # <FAP RSP>
-        from instrument import DeployedInstrument
-        from instrument import Instrument
+        from qf.instrument import DeployedInstrument
+        from qf.instrument import Instrument
         bf4 = Instrument(make="emi", model="bf4", serial_number=9819, channel=0, epoch=0)
         hx_instrument = DeployedInstrument(sensor=bf4)
         hx_instrument.get_response_function()
