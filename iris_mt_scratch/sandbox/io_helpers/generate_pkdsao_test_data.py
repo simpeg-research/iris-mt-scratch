@@ -24,20 +24,31 @@ def test_can_read_rover():
 
 def sort_out_which_channels_are_which():
     print("Not yet Implemented")
-    print("You can use the mat-files un ULFEM if you really need to")
+    print("You can use the mat-files in ULFEM if you really need to")
 
 
-def get_webpage_name_from_metadata(station_id):
+def get_webpage_name_from_metadata(station_id, pz_or_fap='pz'):
     """
     Place holder for a function to form the IRIS metadata query
     Returns
     -------
     # webpage = "https://service.iris.edu/fdsnws/station/1/query?net=BK&sta=PKD&loc=--&cha=LQ2,LQ3,LT1,LT2&starttime=2007-03-14T14:20:00&endtime=2008-08-26T00:00:00&level=response&format=xml&includecomments=true&nodata=404"
     """
-    if station_id == "PKD":
-        webpage = "https://service.iris.edu/fdsnws/station/1/query?net=BK&sta=PKD&loc=--&cha=LQ2,LQ3,LT1,LT2&starttime=2004-09-28T00:00:00&endtime=2004-09-28T23:59:59&level=response&format=xml&includecomments=true&nodata=404"
-    elif station_id == "SAO":
-        webpage = "https://service.iris.edu/fdsnws/station/1/query?net=BK&sta=SAO&loc=--&cha=LQ2,LQ3,LT1,LT2&starttime=2004-09-28T00:00:00&endtime=2004-09-28T23:59:59&level=response&format=xml&includecomments=true&nodata=404"
+    if pz_or_fap == "pz":
+        if station_id == "PKD":
+            webpage = "https://service.iris.edu/fdsnws/station/1/query?net=BK&sta=PKD&loc=--&cha=LQ2,LQ3,LT1,LT2&starttime=2004-09-28T00:00:00&endtime=2004-09-28T23:59:59&level=response&format=xml&includecomments=true&nodata=404"
+        elif station_id == "SAO":
+            webpage = "https://service.iris.edu/fdsnws/station/1/query?net=BK&sta=SAO&loc=--&cha=LQ2,LQ3,LT1,LT2&starttime=2004-09-28T00:00:00&endtime=2004-09-28T23:59:59&level=response&format=xml&includecomments=true&nodata=404"
+    elif pz_or_fap == "fap":
+        if station_id == "PKD":
+            webpage = "https://service.iris.edu/fdsnwsbeta/station/1/query?net=EM&sta=FL001&cha=MFN&level=response&format=xml&includecomments=true&nodata=404"
+        elif station_id == "SAO":
+            print("Ask Tim For a SAO FAP response")
+            raise(Exception)
+    else:
+        print(f"pz_or_fap must be one of 'pz' or 'fap', not {pz_or_fap}")
+        raise Exception
+
     return webpage
 
 

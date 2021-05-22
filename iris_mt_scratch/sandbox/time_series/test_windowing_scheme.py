@@ -5,10 +5,11 @@ from iris_mt_scratch.sandbox.time_series.time_axis_helpers import make_time_axis
 from windowing_scheme import WindowingScheme
 from windowing_scheme import fft_xr_ds
 
-def get_test_windowing_scheme(num_samples_window=32, num_samples_overlap=8):
+def get_test_windowing_scheme(num_samples_window=32, num_samples_overlap=8, sampling_rate=None):
     windowing_scheme = WindowingScheme(num_samples_window=num_samples_window,
                                        num_samples_overlap=num_samples_overlap,
-                                       taper_family="hamming")
+                                       taper_family="hamming",
+                                       sampling_rate=sampling_rate)
     return windowing_scheme
 
 def get_xarray_dataset(N=1000, sps=50.0):
@@ -128,14 +129,17 @@ def test_fourier_transform():
 
     """
     sampling_rate = 40.0
-    windowing_scheme = get_test_windowing_scheme(num_samples_window=128, num_samples_overlap=96)
+    windowing_scheme = get_test_windowing_scheme(num_samples_window=128,
+                                                 num_samples_overlap=96,
+                                                 sampling_rate=sampling_rate)
     ds = get_xarray_dataset(N=10000, sps=sampling_rate)
     windowed_dataset = windowing_scheme.apply_sliding_window(ds)
     tapered_windowed_dataset = windowing_scheme.apply_taper(windowed_dataset)
     #stft = fft_xr_ds(tapered_windowed_dataset, sampling_rate)
-    stft = windowing_scheme.apply_fft(tapered_windowed_dataset, sampling_rate)
-    #import matplotlib.pyplot as plt
-    #plt.plot(stft.frequency.data, np.abs(stft["hx"].data.mean(axis=0)))
+    stft = windowing_scheme.apply_fft(tapered_windowed_dataset)
+    # import matplotlib.pyplot as plt
+    # plt.plot(stft.frequency.data, np.abs(stft["hx"].data.mean(axis=0)))
+    plt.show()
     print("ok")
     pass
 #</TESTS>

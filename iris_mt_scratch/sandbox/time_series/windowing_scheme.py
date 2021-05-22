@@ -89,6 +89,7 @@ class WindowingScheme(ApodizationWindow):
         self.num_samples_overlap = kwargs.get("num_samples_overlap", None) #make this 75% of num_samples_window by default
         self.striding_function_label = kwargs.get("striding_function_label", "crude")
         self._left_hand_window_edge_indices = None
+        self.sampling_rate = kwargs.get("sampling_rate", None)
         #self.sampling_rate = kwargs.get('sampling_rate', None)
 
     def clone(cls):
@@ -286,7 +287,7 @@ class WindowingScheme(ApodizationWindow):
         np.fft.fftfreq(self.num_samples_window, d=dt)
         pass
 
-    def apply_fft(self, data, sample_rate):
+    def apply_fft(self, data, spectral_density_correction=True):
         """
         lets assume we have already applied sliding window and taper.
         Things to think about:
@@ -298,12 +299,36 @@ class WindowingScheme(ApodizationWindow):
         """
         #ONLY SUPPORTS DATASET AT THIS POINT
         if isinstance(data, xr.Dataset):
-            spectral_ds = fft_xr_ds(data, sample_rate)
+            spectral_ds = fft_xr_ds(data, self.sampling_rate)
+            if spectral_density_correction:
+                spectral_ds = self.apply_spectral_density_calibration(spectral_ds)
         else:
             print(f"fft of {type(data)} not yet supported")
             raise Exception
         return  spectral_ds
 
+    def apply_spectral_density_calibration(self, dataset):
+        """
+
+        Parameters
+        ----------
+        dataset
+        sample_rate
+
+        Returns
+        -------
+
+
+        """
+        scale_factor = self.spectral_density_calibration_factor
+        if isinstance(dataset, xr.Dataset):
+            for key in dataset.keys():
+                print(f"applying spectral density calibration to {key}")
+                dataset[key].data *= scale_factor
+        else:
+            print(f"scaling of {type(data)} not yet supported")
+            raise Exception
+        return dataset
 #<PROPERTIES THAT NEED SAMPLING RATE>
 #these may be moved elsewhere later
     @property
@@ -320,17 +345,39 @@ class WindowingScheme(ApodizationWindow):
         """
         return self.num_samples_window*self.dt
 
+    @property
     def duration_advance(self):
         """
         """
         return self.num_samples_advance*self.dt
 
+    @property
+    def spectral_density_calibration_factor(self):
+        factor = spectral_density_calibration_factor(self.coherent_gain, self.nenbw, self.dt, self.num_samples_window)
+        return factor
+
 #</PROPERTIES THAT NEED SAMPLING RATE>
 
 
+def spectral_density_calibration_factor(coherent_gain, enbw, dt, N):
+    """
+    scales the spectra for the effects of the windowing, and converts to spectral density
+    spectral_calibration = (1/0.54)*np.sqrt((2*0.025)/(1.36*288000)) #hamming
+    Parameters
+    ----------
+    coherent_gain
+    enbw
+    dt
+    N
 
+    Returns
+    -------
 
-def fft_xr_ds(dataset, sample_rate):
+    """
+    spectral_density_calibration_factor = (1./coherent_gain)*np.sqrt((2*dt)/(enbw*N))
+    return spectral_density_calibration_factor
+
+def fft_xr_ds(dataset, sample_rate, one_sided=True):
     """
     assume you have an xr.dataset or xr.DataArray.  It is 2D.
     This chould call window_helpers.apply_fft_to_windowed_array
@@ -354,14 +401,20 @@ def fft_xr_ds(dataset, sample_rate):
     n_fft_harmonics = int(samples_per_window / 2)  # when len(window) is odd this is 1 sample shy
     dt = 1. / sample_rate
     harmonic_frequencies = np.fft.fftfreq(samples_per_window, d=dt)
+    if one_sided:
+        harmonic_frequencies = harmonic_frequencies[0:n_fft_harmonics]
     for key in dataset.keys():
         print(f"key {key}")
         data = dataset[key].data
         window_means = data.mean(axis=operation_axis)
         demeaned_data = (data.T - window_means).T
+        print("MAY NEED TO ADD DETRENDING OR PREWHITENING HERE AS PREP FOR FFT")
         fspec_array = np.fft.fft(demeaned_data, axis=1)
-        xrd = xr.DataArray(fspec_array[:,0:n_fft_harmonics], dims=["time", "frequency"],
-                           coords={"frequency": harmonic_frequencies[0:n_fft_harmonics],
+        if one_sided:
+            fspec_array = fspec_array[:,0:n_fft_harmonics]
+
+        xrd = xr.DataArray(fspec_array, dims=["time", "frequency"],
+                           coords={"frequency": harmonic_frequencies,
                                    "time": dataset.time.data})
         output_ds.update({key:xrd})
     return output_ds

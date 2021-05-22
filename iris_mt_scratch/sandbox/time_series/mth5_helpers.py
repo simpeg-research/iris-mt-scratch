@@ -119,6 +119,7 @@ def check_run_channels_have_expected_properties(run):
     print(run.channel_summary)
     hx = run.get_channel('hx')
     print(hx.channel_response_filter)
+    print(hx.channel_response_filter.filters_list)
     print(hx.channel_response_filter.complex_response(np.arange(3) + 1))
     return
 
