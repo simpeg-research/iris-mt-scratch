@@ -67,22 +67,12 @@ def get_webpage_name_from_metadata(station_id, pz_or_fap='pz'):
     return webpage
 
 
-def get_station_xml_filename(station_id, data_date=None):
-    """
-    Placeholder in case we need to make many of these
-    TODO: Modify so the path comes from the dataset_id, not the station_id...
-
-    """
-    target_folder = DATA_DIR.joinpath("iris/BK/2004/XML")
-    target_folder.mkdir(exist_ok=True)
-    xml_filepath = target_folder.joinpath(f"{station_id}.xml")
-    return xml_filepath
 
 def iris_metadata_access_via_wget():
     for station_id in ["PKD", "SAO",]:
         print(station_id)
         webpage = get_webpage_name_from_metadata(station_id)
-        output_filepath = get_station_xml_filename(station_id)
+        output_filepath = f"{station_id}.xml"
         cmd = 'wget "'
         cmd += webpage
         cmd += '" --output-document='
@@ -150,9 +140,8 @@ def cast_data_to_archive(case_id=None):
 
 
 def main():
-    IRISDataAccessExample()
     # test_can_read_rover()
-    # iris_metadata_access_via_wget()
+    iris_metadata_access_via_wget()
     # cast_data_to_archive()
 
 

@@ -22,7 +22,6 @@ import xarray as xr
 
 #from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data
-from iris_mt_scratch.sandbox.io_helpers.generate_pkdsao_test_data import get_station_xml_filename
 from iris_mt_scratch.sandbox.xml.xml_sandbox import describe_inventory_stages
 from iris_mt_scratch.sandbox.xml.xml_sandbox import get_response_inventory_from_iris
 from mt_metadata.timeseries import Experiment
@@ -295,7 +294,7 @@ def filter_control_example(xml_path=None):
 
     """
     if xml_path is None:
-        print("WHY is this not working when I reference the STATIONXML_02?")
+        print("Not working with STATIONXML_02-- FDSN Tide hack")
         xml_path = Path("single_station_mt.xml")
         #xml_path = STATIONXML_02
     experiment = get_experiment_from_xml_path(xml_path)
@@ -353,7 +352,7 @@ def main():
         inventory = test_dataset_config.get_inventory_from_iris(ensure_inventory_stages_are_named=True)
         #inventory = get_inventory_from_test_data_config(dataset_id)
         experiment = get_experiment_from_obspy_inventory(inventory)
-        test_dataset_config.save_xml(experiment, tag="20210522")
+        test_dataset_config.save_xml(experiment)#, tag="20210522")
         experiment = get_mth5_experiment_from_iris("PKD", save_experiment_xml=True)
         experiment = get_mth5_experiment_from_iris("SAO", save_experiment_xml=True)
     #</CREATE METADATA XML>
@@ -361,7 +360,10 @@ def main():
     #<TEST FILTER CONTROL>
     if driver_parameters["test_filter_control"]:
         filter_control_example()
-        filter_control_example(xml_path=get_station_xml_filename("PKD"))
+        dataset_id = "pkd_test_00"
+        test_dataset_config = TEST_DATA_SET_CONFIGS[dataset_id]
+        xml_path = test_dataset_config.get_station_xml_filename()
+        filter_control_example(xml_path=xml_path)
     #</TEST FILTER CONTROL>
 
 
@@ -370,7 +372,9 @@ def main():
     #method 1 is in aurora driver
         # <METHOD2>
     if driver_parameters["run_ts_from_xml_02"]:
-        pkd_xml = get_station_xml_filename("PKD")
+        dataset_id = "pkd_test_00"
+        test_dataset_config = TEST_DATA_SET_CONFIGS[dataset_id]
+        pkd_xml = test_dataset_config.get_station_xml_filename()
         experiment = get_experiment_from_xml_path(pkd_xml)
         run_obj = embed_experiment_into_run("PKD", experiment)
         runts_obj = cast_run_to_run_ts(run_obj, station_id="PKD")
