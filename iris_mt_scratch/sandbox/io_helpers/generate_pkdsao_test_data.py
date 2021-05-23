@@ -10,6 +10,21 @@ from mth5.utils.pathing import DATA_DIR
 
 ASCII_COLUMNS = ["hx", "hy", "ex", "ey"]
 
+def get_test_dataset(station_id):
+    from obspy import UTCDateTime
+    network = "BK"
+    starttime = UTCDateTime("2004-09-28T00:00:00")
+    endtime = UTCDateTime("2004-09-28T23:59:59")
+    channel_codes = "LQ2,LQ3,LT1,LT2"
+    channel_codes = "BQ2,BQ3,BT1,BT2"
+
+    inventory = get_response_inventory_from_iris(network=network,
+                                        station=station_id,
+                                        channel=channel_codes,
+                                        starttime=starttime,
+                                        endtime = endtime,
+                                        )
+    return inventory
 
 def test_can_read_rover():
     import obspy

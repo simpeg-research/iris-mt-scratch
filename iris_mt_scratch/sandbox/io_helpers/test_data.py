@@ -13,31 +13,78 @@ import datetime
 import numpy as np
 import pandas as pd
 
+from obspy import UTCDateTime
+
+from iris_mt_scratch.sandbox.xml.xml_sandbox import get_response_inventory_from_iris
 from mth5.timeseries.channel_ts import ChannelTS
 from mth5.timeseries.run_ts import RunTS
 from mth5.utils.pathing import DATA_DIR
 
 HEXY = ['hx','hy','ex','ey'] #default components list
 
-class TestDataSet(object):
+class TestDataSetConfig(object):
     """
     Need:
-    iris_metadata_parameters
-    data_parameters (how to rover, or load from local)
-
+    -iris_metadata_parameters
+    -data_parameters (how to rover, or load from local)
+    -a way to speecify station-channel, this config will only work for single stations.
 
     """
     def __init__(self):
         self.network = None
         self.station = None
         self.channels = None
-        self.start_time = None
-        self.end_time = None
+        self.starttime = None
+        self.endtime = None
+        self.description = None
+        self.id = None
+        self.components_list = None #
 
-    def get_xml_from_iris(self):
-        pass
+    def get_inventory_from_iris(self):
+
+        inventory = get_response_inventory_from_iris(network=self.network,
+                                                     station=self.station,
+                                                     channel=self.channels,
+                                                     starttime=self.starttime,
+                                                     endtime=self.endtime,
+                                                     )
+        return inventory
+
+    def get_test_dataset(self):
+        array_list = get_example_array_list(components_list=self.components_list,
+                                            load_actual=True,
+                                            station_id=self.station,
+                                            component_station_label=False)
+        mvts = RunTS(array_list=array_list)
+        return mvts
+
     def get_data_via_rover(self):
+        """
+        Need
+        1. Where does the rover-ed file end up?  that path needs to be accessible to load the data
+        after it is generated
+        Returns
+        -------
+
+        """
         pass
+
+#<CREATE TEST CONFIGS>
+#PKD_00 Single station
+test_data_set_pkd_00 = TestDataSetConfig()
+test_data_set_pkd_00.dataset_id = "pkd_test_00"
+test_data_set_pkd_00.network = "BK"
+test_data_set_pkd_00.station = "PKD"
+test_data_set_pkd_00.starttime = UTCDateTime("2004-09-28T00:00:00")
+test_data_set_pkd_00.endtime = UTCDateTime("2004-09-28T23:59:59")
+#test_data_set_pkd_00.channel_codes = "LQ2,LQ3,LT1,LT2"
+test_data_set_pkd_00.channel_codes = "BQ2,BQ3,BT1,BT2"
+test_data_set_pkd_00.description = "2h of PKD data for 2004-09-28 midnight UTC until 0200"
+test_data_set_pkd_00.components_list = HEXY
+TEST_DATA_SET_CONFIGS = {}
+TEST_DATA_SET_CONFIGS["PKD_00"] = test_data_set_pkd_00
+
+#</CREATE TEST CONFIGS>
 
 
 class TestDataHelper(object):
@@ -133,7 +180,21 @@ def get_channel(component, station_id="", start=None, sampling_rate=None, load_a
 
 
 
-def get_example_array_list(components_list=None, load_actual=True, station_id=None, component_station_label=False):
+def get_example_array_list(components_list=None, load_actual=True, station_id=None,
+                           component_station_label=False):
+    """
+    instantites a list of Channel objects with data embedded.  This is used to create a
+    Parameters
+    ----------
+    components_list
+    load_actual
+    station_id
+    component_station_label
+
+    Returns
+    -------
+
+    """
     array_list = []
     for component in components_list:
         channel = get_channel(component,
@@ -142,6 +203,8 @@ def get_example_array_list(components_list=None, load_actual=True, station_id=No
                               component_station_label=component_station_label)
         array_list.append(channel)
     return array_list
+
+
 
 
 def get_example_data(components_list=HEXY,
@@ -154,3 +217,10 @@ def get_example_data(components_list=HEXY,
                                         component_station_label=component_station_label)
     mvts = RunTS(array_list=array_list)
     return mvts
+
+
+def main():
+    print("hi")
+
+if __name__=="__main__":
+    main()

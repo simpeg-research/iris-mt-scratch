@@ -38,55 +38,27 @@ HEXY = ['hx','hy','ex','ey'] #default components list
 xml_path = Path("/home/kkappler/software/irismt/mt_metadata/data/xml")
 magnetic_xml_template = xml_path.joinpath("mtml_magnetometer_example.xml")
 electric_xml_template = xml_path.joinpath("mtml_electrode_example.xml")
-#single_station_xml_template = STATIONXML_02 # Fails for "no survey key"
+single_station_xml_template = STATIONXML_02 # Fails for "no survey key"
 #single_station_xml_template = Path("single_station_mt.xml")
 
 
-#<LOAD SOME DATA FROM A SINGLE STATION>
-N = 288000#86400
-#DEFAULT_SAMPLING_RATE = 40.0#1.0
-
-
-def get_filters_dict_from_experiment(experiment, verbose=False):
-    """
-    MTH5 HELPER
-    Only takes the zero'th survey, we will need to index surveys eventually
-    Parameters
-    ----------
-    experiment
-    verbose
-
-    Returns
-    -------
-
-    """
-    surveys = experiment.surveys
-    survey = surveys[0]
-    survey_filters = survey.filters
-    if verbose:
-        print(experiment, type(experiment))
-        print("Survey Filters", survey.filters)
-        filter_keys = list(survey_filters.keys())
-        print("FIlter keys", filter_keys)
-        for filter_key in filter_keys:
-            print(filter_key, survey_filters[filter_key])
-    return survey_filters
-
-def get_experiment_from_xml(xml):
+#<GET EXPERIMENT>
+def get_experiment_from_xml_path(xml):
     xml_path = Path(xml)
     experiment = Experiment()
     experiment.from_xml(fn=xml_path)
     print(experiment, type(experiment))
     return experiment
 
-def cast_obspy_inventory_to_mth5_experiment(inventory):
+def get_experiment_from_obspy_inventory(inventory):
     translator = XMLInventoryMTExperiment()
     experiment = translator.xml_to_mt(inventory_object=inventory)
     return experiment
 
-
 def get_mth5_experiment_from_iris(station_id, save_experiment_xml=False):
     """
+    THIS FUNCTION SHOULD BE REFERRING TO TEST_DATA FOR THE METADATA PARAMETERS
+    PASSED IN THE CALL TO get_response_inventory_from_iris()
     his function needs to be factored to remove duplication.
     Note it is composed of 3 parts
     1. It gets an iris inventory (this is also a fcn in xml_sandbox --get_response_inventory_from_iris())
@@ -115,6 +87,10 @@ def get_mth5_experiment_from_iris(station_id, save_experiment_xml=False):
     -------
 
     """
+    #THIS FUNCTION SHOULD BE REFERRING TO TEST_DATA FOR THE METADATA PARAMETERS
+    #PASSED IN THE CALL TO get_response_inventory_from_iris()
+    from iris_mt_scratch.sandbox.io_helpers.test_data import TEST_DATA_SET_CONFIGS
+    #CHANGE station_id to DATASET_ID
     from obspy import UTCDateTime
     network = "BK"
     starttime = UTCDateTime("2004-09-28T00:00:00")
@@ -133,13 +109,45 @@ def get_mth5_experiment_from_iris(station_id, save_experiment_xml=False):
     describe_inventory_stages(inventory, assign_names=True)
     print("NETWORKS REASSIGNED")
     describe_inventory_stages(inventory, assign_names=False)
-    experiment = cast_obspy_inventory_to_mth5_experiment(inventory)
+
+    experiment = get_experiment_from_obspy_inventory(inventory)
 
     if save_experiment_xml:
         output_xml_path = get_station_xml_filename(station_id)
         experiment.to_xml(output_xml_path)
         print(f"saved experiement to {output_xml_path}")
     return experiment
+#</GET EXPERIMENT>
+
+
+def get_filters_dict_from_experiment(experiment, verbose=False):
+    """
+    MTH5 HELPER
+    Only takes the zero'th survey, we will need to index surveys eventually
+    Parameters
+    ----------
+    experiment
+    verbose
+
+    Returns
+    -------
+
+    """
+    surveys = experiment.surveys
+    survey = surveys[0]
+    survey_filters = survey.filters
+    if verbose:
+        print(experiment, type(experiment))
+        print("Survey Filters", survey.filters)
+        filter_keys = list(survey_filters.keys())
+        print("FIlter keys", filter_keys)
+        for filter_key in filter_keys:
+            print(filter_key, survey_filters[filter_key])
+    return survey_filters
+
+
+
+
 
 
 def check_run_channels_have_expected_properties(run):
@@ -175,11 +183,27 @@ def test_experiment_from_station_xml():
     mt_experiment = translator.xml_to_mt(stationxml_fn=STATIONXML_02)
     return
 
-def embed_metadata_into_run(station_id, xml_path=None):
+
+def embed_experiment_into_run(station_id, experiment, h5_path=None):
     """
     2021-05-12: Trying to initialize RunTS class from xml metadata.
+    We know that runs are not instantiated from XML but rather from
+    Experiment() objects, so lets factor this to take an experiment
+    as input.
+
+
+    THis function served two purposes
+    1. it was a proving ground for fiddling around with runs and xmls.
+    2. It is specifically used by the driver for loacing runs from PKD
+    or SAO.
+
+    It should therefore be factored into some general run stuffs and
+    The specific purpose of this function is
 
     This will give us a single station run for now
+    This is two steps:
+    1. get experiement
+    2. make a run
 
 
     Tried several ways to manually assign run properties
@@ -198,31 +222,40 @@ def embed_metadata_into_run(station_id, xml_path=None):
     ----------
     direct_from_xml
 
-    Returns
+    Returns  type(run_obj)
     -------
+    type(run_obj)
 
+
+
+    TODO: @Jared: can we make mth5_obj.open_mth5(str(h5_path), "w")
+    work with Path() object rather than str(path)?
     """
-    test_file = Path("test.h5")
-    if test_file.exists():
-        test_file.unlink()
+    # if xml_path:
+    #     experiment = get_experiment_from_xml_path(xml_path)
+    # else:
+    #     experiment = get_mth5_experiment_from_iris(station_id)
 
-    if xml_path:
-        experiment = get_experiment_from_xml(xml_path)
-    else:
-        experiment = get_mth5_experiment_from_iris(station_id)
-
+    if h5_path is None:
+        h5_path = Path("test.h5")
+    if h5_path.exists():
+        h5_path.unlink()
     mth5_obj = MTH5()
-    mth5_obj.open_mth5(r"test.h5", "w")
+    mth5_obj.open_mth5(str(h5_path), "w")
     mth5_obj.from_experiment(experiment)
 
-    if "REW09" in mth5_obj.station_list:
-        run_01 = mth5_obj.get_run("REW09", "a")
-    elif "PKD" in mth5_obj.station_list:
-        run_01 = mth5_obj.get_run("PKD", "001") #this run is created here
+    if "REW09" in mth5_obj.station_list: #old test
+        run_obj = mth5_obj.get_run("REW09", "a")
+    elif "PKD" in mth5_obj.station_list: #pkd test
+        run_obj = mth5_obj.get_run("PKD", "001") #this run is created here
         print(experiment.surveys[0].stations[0].runs[0])
-        check_run_channels_have_expected_properties(run_01)
+        check_run_channels_have_expected_properties(run_obj)
+    else:
+        print("skipping creation of run ")
+        raise Exception
 
-    return run_01
+    return run_obj
+
 
 
 
@@ -277,7 +310,7 @@ def filter_control_example(xml_path=None):
         print("WHY is this not working when I reference the STATIONXML_02?")
         xml_path = Path("single_station_mt.xml")
         #xml_path = STATIONXML_02
-    experiment = get_experiment_from_xml(xml_path)
+    experiment = get_experiment_from_xml_path(xml_path)
     filter_dict = get_filters_dict_from_experiment(experiment)
     frq = np.arange(5) + 1.2
     filter_keys = list(filter_dict.keys())
@@ -343,14 +376,19 @@ def main():
         # <METHOD2>
     if driver_parameters["run_ts_from_xml_02"]:
         pkd_xml = get_station_xml_filename("PKD")
-        run_obj = embed_metadata_into_run("PKD", xml_path=pkd_xml)
+        experiment = get_experiment_from_xml_path(pkd_xml)
+        run_obj = embed_experiment_into_run("PKD", experiment)
         runts_obj = cast_run_to_run_ts(run_obj, station_id="PKD")
         # </METHOD2>
 
         # <METHOD3>
     if driver_parameters["run_ts_from_xml_03"]:
-        run_obj = embed_metadata_into_run("REW09", xml_path=single_station_xml_template)
-        runts_obj = cast_run_to_run_ts(run_obj)
+        try:
+            experiment = get_experiment_from_xml_path(single_station_xml_template)
+            run_obj = embed_experiment_into_run("REW09", experiment)
+            runts_obj = cast_run_to_run_ts(run_obj)
+        except KeyError:
+            print("FDSN TIDE HACK CAUSING EXCEPTION")
         # </METHOD3>
     #</TEST RunTS FROM XML>
 

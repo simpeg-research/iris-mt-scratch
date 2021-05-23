@@ -28,12 +28,13 @@ from iris_mt_scratch.sandbox.io_helpers.generate_pkdsao_test_data import get_sta
 # from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_array_list
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data
+from iris_mt_scratch.sandbox.io_helpers.test_data import TEST_DATA_SET_CONFIGS
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import cast_run_to_run_ts
-from iris_mt_scratch.sandbox.time_series.mth5_helpers import get_experiment_from_xml
+from iris_mt_scratch.sandbox.time_series.mth5_helpers import get_experiment_from_xml_path
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import HEXY
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import cast_run_to_run_ts
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import check_run_channels_have_expected_properties
-from iris_mt_scratch.sandbox.time_series.mth5_helpers import embed_metadata_into_run
+from iris_mt_scratch.sandbox.time_series.mth5_helpers import embed_experiment_into_run
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import get_mth5_experiment_from_iris
 from iris_mt_scratch.sandbox.time_series.windowing_scheme import WindowingScheme
 
@@ -48,7 +49,8 @@ def set_driver_parameters():
     return driver_parameters
 
 def test_runts_from_xml():
-    run_obj = embed_metadata_into_run("PKD")
+    experiment = get_mth5_experiment_from_iris("PKD", save_experiment_xml=True)
+    run_obj = embed_experiment_into_run("PKD", experiment, h5_path="PKD.h5")
     array_list = get_example_array_list(components_list=HEXY,
                                         load_actual=True,
                                         station_id="PKD")
@@ -82,8 +84,8 @@ def main():
 
     #<INITIALIZE DATA AND METADATA>
     if driver_parameters["initialize_data"]:
-        #experiment = get_mth5_experiment_from_iris("PKD", save_experiment_xml=True)
-        run_obj = embed_metadata_into_run("PKD")
+        experiment = get_mth5_experiment_from_iris("PKD", save_experiment_xml=True)
+        run_obj = embed_experiment_into_run("PKD", experiment, h5_path=Path("PKD.h5"))
         pkd_mvts = get_example_data(station_id="PKD", component_station_label=False)
     #</INITIALIZE DATA>
 
