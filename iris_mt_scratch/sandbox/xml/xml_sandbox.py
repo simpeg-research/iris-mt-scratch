@@ -54,7 +54,7 @@ def get_response_inventory_from_iris(network=None, station=None, channel=None,
     ----------
     network     network = "BK"
     station
-    channel     channel = "LQ2,LQ3,LT1,LT2"
+    channel     channel = "LQ2,LQ3,LT1,LT2".  If you leave it as None it will get all channels
     starttime
     endtime
     station_id
@@ -128,6 +128,8 @@ def describe_inventory_stages(inventory, assign_names=False):
         inventory.networks = networks
         print("NETWORKS REASSIGNED")
     return #inventory
+
+
 
 
 def iterate_through_mtml(networks):

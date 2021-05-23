@@ -68,7 +68,11 @@ def get_webpage_name_from_metadata(station_id, pz_or_fap='pz'):
 
 
 def get_station_xml_filename(station_id, data_date=None):
-    """Placeholder in case we need to make many of these"""
+    """
+    Placeholder in case we need to make many of these
+    TODO: Modify so the path comes from the dataset_id, not the station_id...
+
+    """
     target_folder = DATA_DIR.joinpath("iris/BK/2004/XML")
     target_folder.mkdir(exist_ok=True)
     xml_filepath = target_folder.joinpath(f"{station_id}.xml")
@@ -85,6 +89,7 @@ def iris_metadata_access_via_wget():
         cmd += str(output_filepath)
         execute_subprocess(cmd)
     return
+
 
 
 

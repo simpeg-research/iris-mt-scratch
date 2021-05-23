@@ -24,7 +24,6 @@ import pandas as pd
 import scipy.signal as ssig
 import xarray as xr
 
-from iris_mt_scratch.sandbox.io_helpers.generate_pkdsao_test_data import get_station_xml_filename
 # from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_array_list
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data

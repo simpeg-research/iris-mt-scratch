@@ -16,6 +16,7 @@ import pandas as pd
 from obspy import UTCDateTime
 
 from iris_mt_scratch.sandbox.xml.xml_sandbox import get_response_inventory_from_iris
+from iris_mt_scratch.sandbox.xml.xml_sandbox import describe_inventory_stages
 from mth5.timeseries.channel_ts import ChannelTS
 from mth5.timeseries.run_ts import RunTS
 from mth5.utils.pathing import DATA_DIR
@@ -37,17 +38,21 @@ class TestDataSetConfig(object):
         self.starttime = None
         self.endtime = None
         self.description = None
-        self.id = None
+        self.dataset_id = None
         self.components_list = None #
 
-    def get_inventory_from_iris(self):
+    def get_inventory_from_iris(self, ensure_inventory_stages_are_named=True):
 
         inventory = get_response_inventory_from_iris(network=self.network,
                                                      station=self.station,
-                                                     channel=self.channels,
+                                                     channel=self.channel_codes,
                                                      starttime=self.starttime,
                                                      endtime=self.endtime,
                                                      )
+        if ensure_inventory_stages_are_named:
+            describe_inventory_stages(inventory, assign_names=True)
+            # describe_inventory_stages(inventory, assign_names=False)
+
         return inventory
 
     def get_test_dataset(self):
@@ -69,6 +74,42 @@ class TestDataSetConfig(object):
         """
         pass
 
+    def get_station_xml_filename(self, tag=""):
+        """
+        Placeholder in case we need to make many of these
+        TODO: Modify so the path comes from the dataset_id, not the station_id...
+
+        """
+        filebase = f"{self.dataset_id}.xml"
+        if tag:
+            filebase = f"{tag}_{filebase}"
+        target_folder = DATA_DIR.joinpath("iris",f"{self.network}")
+        target_folder.mkdir(exist_ok=True)
+        xml_filepath = target_folder.joinpath(filebase)
+        return xml_filepath
+
+    def save_xml(self, experiment, tag=""):
+        """
+        could probably use inventory or experiement
+        Maybe even add a type-checker here
+        if isinstance(xml_obj, inventory):
+            tag="inventory"
+        elif  isinstance(xml_obj, Experiment()):
+            tag="experiment"
+
+        Parameters
+        ----------
+        experiement
+
+        Returns
+        -------
+
+        """
+        output_xml_path = self.get_station_xml_filename(tag=tag)
+        experiment.to_xml(output_xml_path)
+        print(f"saved experiement to {output_xml_path}")
+        return
+
 #<CREATE TEST CONFIGS>
 #PKD_00 Single station
 test_data_set_pkd_00 = TestDataSetConfig()
@@ -82,7 +123,7 @@ test_data_set_pkd_00.channel_codes = "BQ2,BQ3,BT1,BT2"
 test_data_set_pkd_00.description = "2h of PKD data for 2004-09-28 midnight UTC until 0200"
 test_data_set_pkd_00.components_list = HEXY
 TEST_DATA_SET_CONFIGS = {}
-TEST_DATA_SET_CONFIGS["PKD_00"] = test_data_set_pkd_00
+TEST_DATA_SET_CONFIGS["pkd_test_00"] = test_data_set_pkd_00
 
 #</CREATE TEST CONFIGS>
 

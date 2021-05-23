@@ -55,8 +55,27 @@ def get_experiment_from_obspy_inventory(inventory):
     experiment = translator.xml_to_mt(inventory_object=inventory)
     return experiment
 
+
+
+def get_inventory_from_test_data_config(dataset_id):
+    """
+
+    Parameters
+    ----------
+    dataset_id: dataset_id = "pkd_test_00"
+
+    Returns
+    -------
+
+    """
+    from iris_mt_scratch.sandbox.io_helpers.test_data import TEST_DATA_SET_CONFIGS
+    test_dataset_config = TEST_DATA_SET_CONFIGS[dataset_id]
+    inventory = test_dataset_config.get_inventory_from_iris(ensure_inventory_stages_are_named=True)
+    return inventory
+
 def get_mth5_experiment_from_iris(station_id, save_experiment_xml=False):
     """
+
     THIS FUNCTION SHOULD BE REFERRING TO TEST_DATA FOR THE METADATA PARAMETERS
     PASSED IN THE CALL TO get_response_inventory_from_iris()
     his function needs to be factored to remove duplication.
@@ -66,6 +85,8 @@ def get_mth5_experiment_from_iris(station_id, save_experiment_xml=False):
     describe_inventory_stages() does this
     3. It casts the inventory to an Experiement()
     Returns experiment
+
+    To Factor, start with first reading inventory as per dataset_id
 
     gets metadata from IRIS as station_xml and then uses obspy to cast this
     as an "Inventory()" obspy.core.inventory.inventory.Inventory
@@ -78,6 +99,8 @@ def get_mth5_experiment_from_iris(station_id, save_experiment_xml=False):
     but this did not work.  What does work is to create the experiment and save
     that to xml, and read back in.
 
+    TODO: CHANGE station_id to DATASET_ID
+
     Parameters
     ----------
     station_id
@@ -87,35 +110,13 @@ def get_mth5_experiment_from_iris(station_id, save_experiment_xml=False):
     -------
 
     """
-    #THIS FUNCTION SHOULD BE REFERRING TO TEST_DATA FOR THE METADATA PARAMETERS
-    #PASSED IN THE CALL TO get_response_inventory_from_iris()
-    from iris_mt_scratch.sandbox.io_helpers.test_data import TEST_DATA_SET_CONFIGS
-    #CHANGE station_id to DATASET_ID
-    from obspy import UTCDateTime
-    network = "BK"
-    starttime = UTCDateTime("2004-09-28T00:00:00")
-    endtime = UTCDateTime("2004-09-28T23:59:59")
-    channel_codes = "LQ2,LQ3,LT1,LT2"
-    channel_codes = "BQ2,BQ3,BT1,BT2"
-
-    inventory = get_response_inventory_from_iris(network=network,
-                                        station=station_id,
-                                        channel=channel_codes,
-                                        starttime=starttime,
-                                        endtime = endtime,
-                                        )
-    inventory
-    print("Add sensor name here")
-    describe_inventory_stages(inventory, assign_names=True)
-    print("NETWORKS REASSIGNED")
-    describe_inventory_stages(inventory, assign_names=False)
-
+    dataset_id = "pkd_test_00"
+    inventory = get_inventory_from_test_data_config(dataset_id)
     experiment = get_experiment_from_obspy_inventory(inventory)
-
     if save_experiment_xml:
-        output_xml_path = get_station_xml_filename(station_id)
-        experiment.to_xml(output_xml_path)
-        print(f"saved experiement to {output_xml_path}")
+        from iris_mt_scratch.sandbox.io_helpers.test_data import TEST_DATA_SET_CONFIGS
+        test_dataset_config = TEST_DATA_SET_CONFIGS[dataset_id]
+        test_dataset_config.save_xml(experiment)
     return experiment
 #</GET EXPERIMENT>
 
@@ -187,23 +188,15 @@ def test_experiment_from_station_xml():
 def embed_experiment_into_run(station_id, experiment, h5_path=None):
     """
     2021-05-12: Trying to initialize RunTS class from xml metadata.
-    We know that runs are not instantiated from XML but rather from
-    Experiment() objects, so lets factor this to take an experiment
-    as input.
-
 
     THis function served two purposes
     1. it was a proving ground for fiddling around with runs and xmls.
-    2. It is specifically used by the driver for loacing runs from PKD
+    2. It is specifically used by the driver for loading runs from PKD
     or SAO.
 
     It should therefore be factored into some general run stuffs and
-    The specific purpose of this function is
 
     This will give us a single station run for now
-    This is two steps:
-    1. get experiement
-    2. make a run
 
 
     Tried several ways to manually assign run properties
@@ -231,11 +224,6 @@ def embed_experiment_into_run(station_id, experiment, h5_path=None):
     TODO: @Jared: can we make mth5_obj.open_mth5(str(h5_path), "w")
     work with Path() object rather than str(path)?
     """
-    # if xml_path:
-    #     experiment = get_experiment_from_xml_path(xml_path)
-    # else:
-    #     experiment = get_mth5_experiment_from_iris(station_id)
-
     if h5_path is None:
         h5_path = Path("test.h5")
     if h5_path.exists():
@@ -359,6 +347,13 @@ def main():
     driver_parameters = set_driver_parameters()
     #<CREATE METADATA XML>
     if driver_parameters["create_xml"]:
+        from iris_mt_scratch.sandbox.io_helpers.test_data import TEST_DATA_SET_CONFIGS
+        dataset_id = "pkd_test_00"
+        test_dataset_config = TEST_DATA_SET_CONFIGS[dataset_id]
+        inventory = test_dataset_config.get_inventory_from_iris(ensure_inventory_stages_are_named=True)
+        #inventory = get_inventory_from_test_data_config(dataset_id)
+        experiment = get_experiment_from_obspy_inventory(inventory)
+        test_dataset_config.save_xml(experiment, tag="20210522")
         experiment = get_mth5_experiment_from_iris("PKD", save_experiment_xml=True)
         experiment = get_mth5_experiment_from_iris("SAO", save_experiment_xml=True)
     #</CREATE METADATA XML>
