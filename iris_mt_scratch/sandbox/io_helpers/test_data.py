@@ -111,19 +111,55 @@ class TestDataSetConfig(object):
         return
 
 #<CREATE TEST CONFIGS>
-#PKD_00 Single station
-test_data_set_pkd_00 = TestDataSetConfig()
-test_data_set_pkd_00.dataset_id = "pkd_test_00"
-test_data_set_pkd_00.network = "BK"
-test_data_set_pkd_00.station = "PKD"
-test_data_set_pkd_00.starttime = UTCDateTime("2004-09-28T00:00:00")
-test_data_set_pkd_00.endtime = UTCDateTime("2004-09-28T23:59:59")
-#test_data_set_pkd_00.channel_codes = "LQ2,LQ3,LT1,LT2"
-test_data_set_pkd_00.channel_codes = "BQ2,BQ3,BT1,BT2"
-test_data_set_pkd_00.description = "2h of PKD data for 2004-09-28 midnight UTC until 0200"
-test_data_set_pkd_00.components_list = HEXY
-TEST_DATA_SET_CONFIGS = {}
-TEST_DATA_SET_CONFIGS["pkd_test_00"] = test_data_set_pkd_00
+def make_test_configs():
+    test_data_set_configs = {}
+
+    #<pkd_test_00 Single station>
+    test_data_set = TestDataSetConfig()
+    test_data_set.dataset_id = "pkd_test_00"
+    test_data_set.network = "BK"
+    test_data_set.station = "PKD"
+    test_data_set.starttime = UTCDateTime("2004-09-28T00:00:00")
+    test_data_set.endtime = UTCDateTime("2004-09-28T23:59:59")
+    #test_data_set.channel_codes = "LQ2,LQ3,LT1,LT2"
+    test_data_set.channel_codes = "BQ2,BQ3,BT1,BT2"
+    test_data_set.description = "2h of PKD data for 2004-09-28 midnight UTC until 0200"
+    test_data_set.components_list = HEXY
+
+    test_data_set_configs[test_data_set.dataset_id] = test_data_set
+    #</pkd_test_00 Single station>
+
+    # <sao_test_00 Single station>
+    test_data_set = TestDataSetConfig()
+    test_data_set.dataset_id = "sao_test_00"
+    test_data_set.network = "BK"
+    test_data_set.station = "SAO"
+    test_data_set.starttime = UTCDateTime("2004-09-28T00:00:00")
+    test_data_set.endtime = UTCDateTime("2004-09-28T23:59:59")
+    #test_data_set.channel_codes = "LQ2,LQ3,LT1,LT2"
+    test_data_set.channel_codes = "BQ2,BQ3,BT1,BT2"
+    test_data_set.description = "2h of SAO data for 2004-09-28 midnight UTC until 0200"
+    test_data_set.components_list = HEXY
+
+    test_data_set_configs[test_data_set.dataset_id] = test_data_set
+    # </sao_test_00 Single station>
+
+    #<FAP>
+    test_data_set = TestDataSetConfig()
+    test_data_set.dataset_id = "fap_test"
+    test_data_set.network = "EM"
+    test_data_set.station = "FL001"
+    test_data_set.starttime = None#UTCDateTime("2004-09-28T00:00:00")
+    test_data_set.endtime = None#UTCDateTime("2004-09-28T23:59:59")
+    test_data_set.channel_codes = "MFN"#BQ2,BQ3,BT1,BT2"
+    test_data_set.description = "test of a fap xml"
+
+    test_data_set_configs["fap_test"] = test_data_set
+    # </FAP>
+    return test_data_set_configs
+
+
+TEST_DATA_SET_CONFIGS = make_test_configs()
 
 #</CREATE TEST CONFIGS>
 

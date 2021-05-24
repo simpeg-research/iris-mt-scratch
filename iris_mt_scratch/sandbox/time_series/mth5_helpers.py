@@ -22,8 +22,8 @@ import xarray as xr
 
 #from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data
+from iris_mt_scratch.sandbox.io_helpers.test_data import TEST_DATA_SET_CONFIGS
 from iris_mt_scratch.sandbox.xml.xml_sandbox import describe_inventory_stages
-from iris_mt_scratch.sandbox.xml.xml_sandbox import get_response_inventory_from_iris
 from mt_metadata.timeseries import Experiment
 from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
 from mt_metadata.utils import STATIONXML_02
@@ -32,12 +32,13 @@ from mth5.timeseries.channel_ts import ChannelTS
 from mth5.timeseries.run_ts import RunTS
 from mth5.utils.pathing import DATA_DIR
 
-#TEST_DATA_HELPER = TestDataHelper(dataset_id="PKD_SAO_2004_272_00-2004_272_02")
 HEXY = ['hx','hy','ex','ey'] #default components list
 xml_path = Path("/home/kkappler/software/irismt/mt_metadata/data/xml")
 magnetic_xml_template = xml_path.joinpath("mtml_magnetometer_example.xml")
 electric_xml_template = xml_path.joinpath("mtml_electrode_example.xml")
 single_station_xml_template = STATIONXML_02 # Fails for "no survey key"
+fap_xml_example = ""
+
 #single_station_xml_template = Path("single_station_mt.xml")
 
 
@@ -72,52 +73,7 @@ def get_inventory_from_test_data_config(dataset_id):
     inventory = test_dataset_config.get_inventory_from_iris(ensure_inventory_stages_are_named=True)
     return inventory
 
-def get_mth5_experiment_from_iris(station_id, save_experiment_xml=False):
-    """
 
-    THIS FUNCTION SHOULD BE REFERRING TO TEST_DATA FOR THE METADATA PARAMETERS
-    PASSED IN THE CALL TO get_response_inventory_from_iris()
-    his function needs to be factored to remove duplication.
-    Note it is composed of 3 parts
-    1. It gets an iris inventory (this is also a fcn in xml_sandbox --get_response_inventory_from_iris())
-    2. It cycles through the SNCL and blubs some info, adding stage names if needed
-    describe_inventory_stages() does this
-    3. It casts the inventory to an Experiement()
-    Returns experiment
-
-    To Factor, start with first reading inventory as per dataset_id
-
-    gets metadata from IRIS as station_xml and then uses obspy to cast this
-    as an "Inventory()" obspy.core.inventory.inventory.Inventory
-    The inventory is then cast to an "Experiment()" and the experiment is returned.
-
-    One might think that the inventory could be saved using inventory.write("tmp.xml")
-    and then we could create the experiment using
-    experiment = Experiment()
-    experiment.from_xml(fn="tmp.xml")
-    but this did not work.  What does work is to create the experiment and save
-    that to xml, and read back in.
-
-    TODO: CHANGE station_id to DATASET_ID
-
-    Parameters
-    ----------
-    station_id
-    save_experiment_xml
-
-    Returns
-    -------
-
-    """
-    dataset_id = "pkd_test_00"
-    inventory = get_inventory_from_test_data_config(dataset_id)
-    experiment = get_experiment_from_obspy_inventory(inventory)
-    if save_experiment_xml:
-        from iris_mt_scratch.sandbox.io_helpers.test_data import TEST_DATA_SET_CONFIGS
-        test_dataset_config = TEST_DATA_SET_CONFIGS[dataset_id]
-        test_dataset_config.save_xml(experiment)
-    return experiment
-#</GET EXPERIMENT>
 
 
 def get_filters_dict_from_experiment(experiment, verbose=False):
@@ -225,6 +181,8 @@ def embed_experiment_into_run(station_id, experiment, h5_path=None):
     """
     if h5_path is None:
         h5_path = Path("test.h5")
+    else:
+        h5_path = Path(h5_path)
     if h5_path.exists():
         h5_path.unlink()
     mth5_obj = MTH5()
@@ -339,22 +297,34 @@ def set_driver_parameters():
     driver_parameters["initialize_data"] = True
     return driver_parameters
 
+def test_can_access_fap_filters():
+    fap_inventory = get_inventory_from_test_data_config("fap_test")
+    describe_inventory_stages(fap_inventory)
+    #<HERE IS THE SPOT TO DROP TRACE TO REVIEW INGEST OF FAP>
+    experiment = get_experiment_from_obspy_inventory(fap_inventory)
+    filters_dict = experiment.surveys[0].filters
+    print(filters_dict)
+    fap = filters_dict['mfn_0']
+    num_filters = len(experiment.surveys[0].filters)
+    # if num_filters ==2:
+    #     print("probably not correct yet")
+
 
 def main():
     #test_experiment_from_station_xml()
+    #test_can_access_fap_filters()
 
     driver_parameters = set_driver_parameters()
     #<CREATE METADATA XML>
     if driver_parameters["create_xml"]:
-        from iris_mt_scratch.sandbox.io_helpers.test_data import TEST_DATA_SET_CONFIGS
-        dataset_id = "pkd_test_00"
-        test_dataset_config = TEST_DATA_SET_CONFIGS[dataset_id]
-        inventory = test_dataset_config.get_inventory_from_iris(ensure_inventory_stages_are_named=True)
-        #inventory = get_inventory_from_test_data_config(dataset_id)
-        experiment = get_experiment_from_obspy_inventory(inventory)
-        test_dataset_config.save_xml(experiment)#, tag="20210522")
-        experiment = get_mth5_experiment_from_iris("PKD", save_experiment_xml=True)
-        experiment = get_mth5_experiment_from_iris("SAO", save_experiment_xml=True)
+        #from iris_mt_scratch.sandbox.io_helpers.test_data import TEST_DATA_SET_CONFIGS
+        dataset_ids = ["pkd_test_00", "sao_test_00",]
+        for dataset_id in dataset_ids:
+            test_dataset_config = TEST_DATA_SET_CONFIGS[dataset_id]
+            inventory = test_dataset_config.get_inventory_from_iris(ensure_inventory_stages_are_named=False)
+            experiment = get_experiment_from_obspy_inventory(inventory)
+            test_dataset_config.save_xml(experiment)#, tag="20210522")
+
     #</CREATE METADATA XML>
 
     #<TEST FILTER CONTROL>

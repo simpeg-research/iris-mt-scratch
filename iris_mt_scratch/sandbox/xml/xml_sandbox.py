@@ -7,8 +7,12 @@ This is a xml reader prototype for the filter.xml
 
 Filter application info: they always have either "value" or "poles_zeros"
 
-Questions for Tim:
-1. Will MT live under a single network at IRIS? Or will there be many possible networks?
+
+#import xml.etree.ElementTree as ET
+#tree = ET.parse(xml_path)
+# mt_root_element = tree.getroot()
+# mt_experiment = Experiment()
+# mt_experiment.from_xml(mt_root_element)
 """
 
 
