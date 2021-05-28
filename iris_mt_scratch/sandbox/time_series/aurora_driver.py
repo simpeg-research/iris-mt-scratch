@@ -65,6 +65,7 @@ def main():
 
     #<TEST RunTS FROM XML>
     if driver_parameters["run_ts_from_xml_01"]:
+        print("RUN OBJ is picking up an ez term (presumably from BQ3")
         experiment, run_obj, runts_obj = test_runts_from_xml(dataset_id, runts_obj=False)
     #</TEST RunTS FROM XML>
 
@@ -92,6 +93,9 @@ def main():
         PNG_PATH.mkdir(parents=True, exist_ok=True)
 
         channel_keys = list(fft_obj.data_vars.keys())
+        print(f"channel_keys: {channel_keys}")
+        print("TODO: THIS IS CHOKING ON EZ presumably from LQ3 -- probably happening "
+              "in translator from inventory to experiment")
         for key in channel_keys[0:1]:
             print(f"{key}")
             channel = run_obj.get_channel(key)

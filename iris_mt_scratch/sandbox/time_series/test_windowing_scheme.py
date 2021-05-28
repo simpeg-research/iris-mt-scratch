@@ -139,7 +139,7 @@ def test_fourier_transform():
     stft = windowing_scheme.apply_fft(tapered_windowed_dataset)
     # import matplotlib.pyplot as plt
     # plt.plot(stft.frequency.data, np.abs(stft["hx"].data.mean(axis=0)))
-    plt.show()
+    #plt.show()
     print("ok")
     pass
 #</TESTS>
