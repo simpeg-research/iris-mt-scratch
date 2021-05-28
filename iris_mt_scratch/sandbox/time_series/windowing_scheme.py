@@ -68,12 +68,11 @@ import copy
 import numpy as np
 import xarray as xr
 
-from iris_mt_scratch.sandbox.time_series.apodization_window import ApodizationWindow
+from aurora.signal.apodization_window import ApodizationWindow
 
-#from iris_mt_scratch.sandbox.time_series.window_helpers import sliding_window
-from iris_mt_scratch.sandbox.time_series.window_helpers import apply_taper_to_windowed_array
-from iris_mt_scratch.sandbox.time_series.window_helpers import available_number_of_windows_in_array
-from iris_mt_scratch.sandbox.time_series.window_helpers import SLIDING_WINDOW_FUNCTIONS
+from aurora.signal.window_helpers import apply_taper_to_windowed_array
+from aurora.signal.window_helpers import available_number_of_windows_in_array
+from aurora.signal.window_helpers import SLIDING_WINDOW_FUNCTIONS
 
 
 

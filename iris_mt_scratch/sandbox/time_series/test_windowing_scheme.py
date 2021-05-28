@@ -1,9 +1,9 @@
 import numpy as np
 import xarray as xr
 
-from iris_mt_scratch.sandbox.time_series.time_axis_helpers import make_time_axis
-from windowing_scheme import WindowingScheme
-from windowing_scheme import fft_xr_ds
+from aurora.signal.time_axis_helpers import make_time_axis
+from aurora.signal.windowing_scheme import WindowingScheme
+from aurora.signal.windowing_scheme import fft_xr_ds
 
 def get_test_windowing_scheme(num_samples_window=32, num_samples_overlap=8, sampling_rate=None):
     windowing_scheme = WindowingScheme(num_samples_window=num_samples_window,
@@ -66,7 +66,7 @@ def test_apply_sliding_window_to_xarray(return_xarray=False):
 
 def test_can_apply_taper():
     import matplotlib.pyplot as plt
-    from iris_mt_scratch.sandbox.time_series.window_helpers import apply_taper_to_windowed_array
+    from aurora.signal.window_helpers import apply_taper_to_windowed_array
     N = 10000
     qq = np.random.random(N)
     windowing_scheme = WindowingScheme(num_samples_window=64, num_samples_overlap=50,
