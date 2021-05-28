@@ -18,6 +18,7 @@ import pandas as pd
 import scipy.signal as ssig
 import xarray as xr
 
+from aurora.signal.windowing_scheme import WindowingScheme
 # from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_array_list
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data
@@ -28,7 +29,6 @@ from iris_mt_scratch.sandbox.time_series.mth5_helpers import get_experiment_from
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import HEXY
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import check_run_channels_have_expected_properties
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import embed_experiment_into_run
-from iris_mt_scratch.sandbox.time_series.windowing_scheme import WindowingScheme
 
 
 def set_driver_parameters():

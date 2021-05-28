@@ -29,8 +29,8 @@ import pandas as pd
 import time
 import xarray as xr
 
-from iris_mt_scratch.sandbox.time_series.windowing_scheme import WindowingScheme
-from iris_mt_scratch.sandbox.time_series.time_axis_helpers import test_generate_time_axis
+from aurora.signal.windowing_scheme import WindowingScheme
+from aurora.signal.time_axis_helpers import test_generate_time_axis
 
 class MultiVariateTimeSeries(object):
     """
@@ -100,7 +100,8 @@ class MultiVariateTimeSeries(object):
         """
         for channel_id in self.channel_labels:
             channel_data = self.channel(channel_id)
-            windowed_data = windowing_scheme.apply_sliding_window(channel_data, return_xarry=True)
+            windowed_data = windowing_scheme.apply_sliding_window(
+                channel_data, return_xarray=True)
             print("?")
 
     def apply_windowing_channel(self, channel_label):
@@ -285,13 +286,17 @@ def test_initialize_multivariate_time_series():
 
 def test_apply_windowing_to_mvts():
     mvts = test_initialize_multivariate_time_series()
-    windowing_scheme = WindowingScheme(num_samples_window=128, num_samples_overlap=64, taper='hamming')
+    windowing_scheme = WindowingScheme(num_samples_window=128,
+                                       num_samples_overlap=64,
+                                       taper_family='hamming')
     mvts.apply_windowing_scheme(windowing_scheme)
 
     print("testing")
 
 def test_fourier_transform():
-    windowing_scheme = WindowingScheme(num_samples_window=128, num_samples_overlap=64, taper='hamming')
+    windowing_scheme = WindowingScheme(num_samples_window=128,
+                                       num_samples_overlap=64,
+                                       taper_family='hamming')
     mvts.shor(windowing_scheme)
 
 def main():
