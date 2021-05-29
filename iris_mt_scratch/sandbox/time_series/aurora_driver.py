@@ -96,12 +96,12 @@ def main():
         print(f"channel_keys: {channel_keys}")
         print("TODO: THIS IS CHOKING ON EZ presumably from LQ3 -- probably happening "
               "in translator from inventory to experiment")
-        for key in channel_keys[0:1]:
+        for key in channel_keys:#[0:1]:
             print(f"{key}")
             channel = run_obj.get_channel(key)
             # <PZRSP>
             pz_calibration_response = channel.channel_response_filter.complex_response(frequencies)
-            pz_calibration_response *= 1e-9
+            #pz_calibration_response *= 1e-9
             abs_pz_calibration_response = np.abs(pz_calibration_response)
             max_pz_calibration_response = np.max(abs_pz_calibration_response)
             norm_pz_calibration_response = abs_pz_calibration_response / max_pz_calibration_response
@@ -214,7 +214,7 @@ def main():
     key = "hy"
     channel = run_obj.get_channel(key)
     pz_calibration_response = channel.channel_response_filter.complex_response(frequencies)
-    pz_calibration_response *= 1e-9
+    #pz_calibration_response *= 1e-9
     calibrated_spectra = fft_obj[key].data[:, 2:] / pz_calibration_response
 #    raw_spectral_density = np.abs(fft_obj[key].data[:, 1:])
 #    calibrated_data_pz =
