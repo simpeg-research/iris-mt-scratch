@@ -1,7 +1,47 @@
 #TODO: replace "fence_posts" with "band_edges"
+import numpy as np
+
 from interval import Interval
 from interval import IntervalSet
 
+
+def extract_band(interval, fft_obj):
+    """
+    will likely be a method of windowing_scheme or FrequencyDomainRun()
+
+    Make the core, underlying numeric (numpy based method) take lower and upper
+    bounds explicitly, i.e. remove dependance on Interval()
+    Parameters
+    ----------
+    interval
+    fft_obj
+
+    Returns
+    -------
+
+    """
+    epsilon = 1e-7
+    frequencies = fft_obj.frequency.data
+
+    cond1 = frequencies >= interval.lower_bound - epsilon
+    cond2 = frequencies <= interval.upper_bound + epsilon
+    indices = cond1 & cond2
+
+    data = fft_obj.data[:, :, indices]
+
+
+    print("slice the fft_obj")
+    subarray = xspec[:, indices]
+    sample = subarray.ravel()
+    print(f"{i} sample shape = {sample.shape}, "
+          f"{interval.lower_bound},{interval.upper_bound}, "
+          f"{period_label}, n_Fc = {sum(indices)}")
+    if sample.shape[0] == 0:
+        print("whaaa?")
+    feature = np.quantile(sample, 0.98)
+    feature = np.log10(feature)
+    features_85[i] = feature
+    print("HI")
 
 def spectral_gates_and_fenceposts(f_lower_bound, f_upper_bound,
                                   num_bands_per_decade=None, num_bands=None):
@@ -48,11 +88,11 @@ def spectral_gates_and_fenceposts(f_lower_bound, f_upper_bound,
     # log - NOT log10!
 
     print("a = {}".format(a))
-    bases = a * np.ones(nBands + 1);
-    print("Roots = {}".format(roots))
-    exponents = linspace(0, nBands, nBands + 1)
+    bases = a * np.ones(num_bands + 1);
+    print("bases = {}".format(bases))
+    exponents = np.linspace(0, num_bands, num_bands + 1)
     print(f"exponents = {exponents}")
-    fence_posts = f_lower_bound * (roots ** pwrs)
+    fence_posts = f_lower_bound * (bases ** exponents)
     print(f"fence posts = {fence_posts}")
     return fence_posts
 
@@ -97,12 +137,16 @@ class BandAveragingScheme(object):
     """
     def __init__(self, **kwargs):
         self.gates = None
-        self.fence_posts = kwargs.get("band_edges", None)
+        self.fence_posts = kwargs.get("fence_posts", None)
         #frequencies ... can repeat (log spacing)
+
+    @property
+    def number_of_bands(self):
+        return len(self.fence_posts)-1
         
     
     
-    @property
+
     def band(self, i_band):
         """
         Decide to index bands from zero or one, i.e.  Choosing 0 for now.
@@ -119,6 +163,11 @@ class BandAveragingScheme(object):
 
         return ivl
 
+    def plot(self):
+        #placeholder: show a plot of the band edges (dots) with x's in
+        # between indicating the Fourier coefficient bins within each band
+        pass
+
 
 
 
@@ -128,7 +177,11 @@ def test_instantiate_band_averaging_scheme():
     upper_bound = 19.921875
     fenceposts = spectral_gates_and_fenceposts(lower_bound, upper_bound,
                                                num_bands=8)
-
+    band_averaging_scheme = BandAveragingScheme(fence_posts=fenceposts)
+    i_band = 3
+    band = band_averaging_scheme.band(i_band)
+    print(f"band {i_band} = {band}")
+    print("OK")
     pass
 
 def main():

@@ -36,7 +36,7 @@ def set_driver_parameters():
     driver_parameters["run_ts_from_xml_01"] = 1#False #True
     driver_parameters["initialize_data"] = True
     driver_parameters["dataset_id"] = "pkd_test_00"
-    driver_parameters["BULK SPECTRA"] = 1#False
+    driver_parameters["BULK SPECTRA"] = False
     return driver_parameters
 
 def test_runts_from_xml(dataset_id, runts_obj=False):
@@ -111,11 +111,25 @@ def main():
     print("tapered_obj", tapered_obj)
     print("ADD A FLAG TO THESE SO YOU KNOW IF TAPER IS APPLIED OR NOT")
 
-    fft_obj = windowing_scheme.apply_fft(tapered_obj, pkd_mvts.sample_rate)
+    fft_obj = windowing_scheme.apply_fft(tapered_obj)#, pkd_mvts.sample_rate)
+    
     print("fft_obj", fft_obj)
+    fft_obj_xrda = fft_obj.to_array("channel")
 
     frequencies = fft_obj.frequency.data[1:]
     print(f"Lower Bound:{frequencies[0]}, Upper bound:{frequencies[-1]}")
+    from frequency_bands import spectral_gates_and_fenceposts
+    from frequency_bands import BandAveragingScheme
+    from frequency_bands import extract_band
+    fenceposts = spectral_gates_and_fenceposts(frequencies[0], frequencies[
+        -1], num_bands=8)
+    band_averaging_scheme = BandAveragingScheme(fence_posts=fenceposts)
+    for i_band in range(band_averaging_scheme.number_of_bands):
+        band = band_averaging_scheme.band(i_band)
+        extract_band(band, fft_obj) 
+        #extract_band(fft_obj)
+        #fft_obj.extract_band(band)
+        
     key = "hy"
     channel = run_obj.get_channel(key)
     pz_calibration_response = channel.channel_response_filter.complex_response(frequencies)
