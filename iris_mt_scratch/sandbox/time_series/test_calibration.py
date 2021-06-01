@@ -4,6 +4,17 @@ import numpy as np
 from pathlib import Path
 
 def load_bf4_fap_for_parkfield_test_using_qf_methods(frequencies):
+    """
+    This function to be removed/deprecated as soon as we have a FAP table
+    consistent with BF4 response archived at IRIS
+    Parameters
+    ----------
+    frequencies
+
+    Returns
+    -------
+
+    """
     from qf.instrument import DeployedInstrument
     from qf.instrument import Instrument
     bf4_coil = Instrument(make="emi", model="bf4", serial_number=9819,

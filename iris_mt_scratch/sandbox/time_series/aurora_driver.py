@@ -113,7 +113,9 @@ def main():
 
     fft_obj = windowing_scheme.apply_fft(tapered_obj, pkd_mvts.sample_rate)
     print("fft_obj", fft_obj)
-    frequencies = fft_obj.frequency.data[2:]
+
+    frequencies = fft_obj.frequency.data[1:]
+    print(f"Lower Bound:{frequencies[0]}, Upper bound:{frequencies[-1]}")
     key = "hy"
     channel = run_obj.get_channel(key)
     pz_calibration_response = channel.channel_response_filter.complex_response(frequencies)
