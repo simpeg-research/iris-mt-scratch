@@ -36,7 +36,7 @@ def set_driver_parameters():
     driver_parameters["run_ts_from_xml_01"] = 1#False #True
     driver_parameters["initialize_data"] = True
     driver_parameters["dataset_id"] = "pkd_test_00"
-    driver_parameters["BULK SPECTRA"] = False
+    driver_parameters["BULK SPECTRA"] = 0#True
     return driver_parameters
 
 def test_runts_from_xml(dataset_id, runts_obj=False):
@@ -46,6 +46,7 @@ def test_runts_from_xml(dataset_id, runts_obj=False):
     experiment = get_experiment_from_obspy_inventory(inventory)
     test_dataset_config.save_xml(experiment)
     run_obj = embed_experiment_into_run("PKD", experiment, h5_path=Path("PKD.h5"))
+
     if runts_obj:
         array_list = get_example_array_list(components_list=HEXY,
                                             load_actual=True,
@@ -66,7 +67,8 @@ def main():
 
     #<TEST RunTS FROM XML>
     if driver_parameters["run_ts_from_xml_01"]:
-        experiment, run_obj, runts_obj = test_runts_from_xml(dataset_id, runts_obj=False)
+        experiment, run_obj, runts_obj = test_runts_from_xml(dataset_id,
+                                                             runts_obj=True)
     #</TEST RunTS FROM XML>
 
     #<INITIALIZE DATA AND METADATA>
@@ -111,22 +113,27 @@ def main():
     print("tapered_obj", tapered_obj)
     print("ADD A FLAG TO THESE SO YOU KNOW IF TAPER IS APPLIED OR NOT")
 
-    fft_obj = windowing_scheme.apply_fft(tapered_obj)#, pkd_mvts.sample_rate)
+    stft_obj = windowing_scheme.apply_fft(tapered_obj)#, pkd_mvts.sample_rate)
     
-    print("fft_obj", fft_obj)
-    fft_obj_xrda = fft_obj.to_array("channel")
+    print("stft_obj", stft_obj)
+    stft_obj_xrda = stft_obj.to_array("channel")
 
-    frequencies = fft_obj.frequency.data[1:]
+    frequencies = stft_obj.frequency.data[1:]
     print(f"Lower Bound:{frequencies[0]}, Upper bound:{frequencies[-1]}")
     from frequency_bands import spectral_gates_and_fenceposts
     from frequency_bands import BandAveragingScheme
     from frequency_bands import extract_band
+    from frequency_bands import extract_band2
     fenceposts = spectral_gates_and_fenceposts(frequencies[0], frequencies[
         -1], num_bands=8)
     band_averaging_scheme = BandAveragingScheme(fence_posts=fenceposts)
     for i_band in range(band_averaging_scheme.number_of_bands):
         band = band_averaging_scheme.band(i_band)
-        extract_band(band, fft_obj) 
+        band_data = extract_band(band, fft_obj_xrda)
+        band_data2 = extract_band2(band, fft_obj_xrda)
+
+        print("ready for TF")
+        qq=1
         #extract_band(fft_obj)
         #fft_obj.extract_band(band)
         

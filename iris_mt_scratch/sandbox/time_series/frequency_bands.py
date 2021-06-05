@@ -4,6 +4,17 @@ import numpy as np
 from interval import Interval
 from interval import IntervalSet
 
+def compute_quantile(data):
+    """
+    receive a 3D array
+    Parameters
+    ----------
+    data
+
+    Returns
+    -------
+
+    """
 
 def extract_band(interval, fft_obj):
     """
@@ -11,6 +22,9 @@ def extract_band(interval, fft_obj):
 
     Make the core, underlying numeric (numpy based method) take lower and upper
     bounds explicitly, i.e. remove dependance on Interval()
+
+    ToDo: Make this method check for the "channel" dimension of fft_obj
+    ToDo: Make this accept indices as well as interval as argument
     Parameters
     ----------
     interval
@@ -29,19 +43,16 @@ def extract_band(interval, fft_obj):
 
     data = fft_obj.data[:, :, indices]
 
+    return data
 
-    print("slice the fft_obj")
-    subarray = xspec[:, indices]
-    sample = subarray.ravel()
-    print(f"{i} sample shape = {sample.shape}, "
-          f"{interval.lower_bound},{interval.upper_bound}, "
-          f"{period_label}, n_Fc = {sum(indices)}")
-    if sample.shape[0] == 0:
-        print("whaaa?")
-    feature = np.quantile(sample, 0.98)
-    feature = np.log10(feature)
-    features_85[i] = feature
-    print("HI")
+
+def extract_band2(interval, fft_obj, epsilon=1e-7):
+    cond1 = fft_obj.frequency >= interval.lower_bound - epsilon
+    cond2 = fft_obj.frequency <= interval.upper_bound + epsilon
+
+    band = fft_obj.where(cond1 & cond2, drop=True)
+    return band
+
 
 def spectral_gates_and_fenceposts(f_lower_bound, f_upper_bound,
                                   num_bands_per_decade=None, num_bands=None):
