@@ -20,7 +20,7 @@ class IterControl(object):
         #separate block/class, etc.
         self.r0 = 1.5
         self.redescend = False
-        self.number_of_redescending_iterations = 1
+        self.number_of_redescending_iterations = 0
         self.maximum_number_of_redescending_iterations = 1
         self.u0 = 2.8 #what is it?
         # </regression-M estimator params>
@@ -67,3 +67,7 @@ class IterControl(object):
 
         return converged
 
+
+    def redescend_maxxed_out(self):
+        pass
+        #   if self.number_of_redescending_iterations >
