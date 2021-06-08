@@ -59,14 +59,14 @@ end %class
 
 
 """
-
-from iter_control import IterControl
+import numpy as np
+from iris_mt_scratch.sandbox.transfer_function.iter_control import IterControl
 
 class RegressionEstimator(object):
 
     def __init__(self, **kwargs):
-        self.X = kwargs.get("X", None)
-        self.Y = None # predicted variables
+        self.X = kwargs.get("X", None) # predictor variables
+        self.Y = kwargs.get("Y", None) # predicted variables
         self.b = None # parameters to be estimated
         self.inverse_signal_covariance = None #Cov_SS
         self.noise_covariance = None  #Cov_NN
@@ -74,6 +74,47 @@ class RegressionEstimator(object):
         self.Yc = None # cleaned data
         self.iter_control = kwargs.get("iter_control", IterControl())
 
+    def cast_data_to_2d_for_regression(self, XY):
+        """
+
+        Parameters
+        ----------
+        XY: either X or Y of the regression nomenclature.  Should be an 
+        xarray.Dataset already splitted on channel
+
+        Returns
+        -------
+
+        """
+        n_channels = len(XY)
+        #tmp = XY.to_dataset("channel")
+        n_frequency = len(XY.frequency)
+        n_segments = len(XY.time)
+        n_fc_per_channel = n_frequency * n_segments
+        output_array = np.full((n_fc_per_channel, n_channels), 
+                               np.nan+1.j*np.nan, dtype=np.complex128)
+        channel_keys = list(XY.keys())
+        for i_ch, key in enumerate(channel_keys):
+            output_array[:, i_ch] = XY[key].data.ravel()
+        return output_array
+    
+    def ravel_XY(self):
+        X = self.X.to_dataset("channel")
+        hx = X["hx"].data.ravel()
+        hy = X["hy"].data.ravel()
+        
+
+    def estimate_ols(self):
+        print("we need to be able to ravel() the xarray")
+        X = self.cast_data_to_2d_for_regression(self.X)
+        Y = self.cast_data_to_2d_for_regression(self.Y)
+        XTX = np.matmul(X.T, np.conj(X))
+        XTX_inv = np.linalg.inv(XTX)
+        EH = np.matmul(Y.T, np.conj(X))
+        Z = np.matmul(EH, XTX_inv)
+        # bW = np.linalg.solve(WTW,
+        #                      np.dot(W.T, yy))  # bW = np.matmul(WWW, yy[i_freq])
+        return Z
 
     def estimate(self):
         print("this method is not defined for the abstract base class")

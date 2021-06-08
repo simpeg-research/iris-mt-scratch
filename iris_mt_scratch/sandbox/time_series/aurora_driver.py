@@ -30,7 +30,28 @@ from iris_mt_scratch.sandbox.time_series.mth5_helpers import HEXY
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import check_run_channels_have_expected_properties
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import embed_experiment_into_run
 
-
+# def cast_data_to_2d_for_regression(XY):
+#     """
+#
+#     Parameters
+#     ----------
+#     XY: either X or Y of the regression nomenclature.  Should be an
+#     xarray.DataArray
+#
+#     Returns
+#     -------
+#
+#     """
+#     n_channels = len(XY.channel)
+#     tmp = XY.to_dataset("channel")
+#     n_frequency = len(XY.frequency)
+#     n_segments = len(XY.time)
+#     n_fc_per_channel = n_frequency * n_segments
+#     output_array = np.full((n_fc_per_channel, n_channels), np.nan)
+#     for i_ch, key in list(tmp.keys()):
+#         output_array[:,i_ch] = XY[key].data.ravel()
+#     return output_array
+    
 def set_driver_parameters():
     driver_parameters = {}
     driver_parameters["run_ts_from_xml_01"] = 1#False #True
@@ -129,8 +150,19 @@ def main():
     band_averaging_scheme = BandAveragingScheme(fence_posts=fenceposts)
     for i_band in range(band_averaging_scheme.number_of_bands):
         band = band_averaging_scheme.band(i_band)
-        band_data = extract_band(band, fft_obj_xrda)
-        band_data2 = extract_band2(band, fft_obj_xrda)
+        band_data = extract_band(band, stft_obj_xrda)
+        band_data2 = extract_band2(band, stft_obj_xrda)
+        band_dataset = band_data2.to_dataset("channel")
+        X = band_dataset[["hx", "hy"]]
+        #X = X.to_array("channel")
+        Y = band_dataset[["ex", "ey"]]
+        #Y = Y.to_array("channel")
+        from iris_mt_scratch.sandbox.transfer_function.TRegression import RegressionEstimator
+        # regression_estimator = RegressionEstimator(X=X.to_array("channel"),
+        #                                            Y=Y.to_array("channel"))
+        regression_estimator = RegressionEstimator(X=X, Y=Y)
+        Z = regression_estimator.estimate_ols()
+
 
         print("ready for TF")
         qq=1
