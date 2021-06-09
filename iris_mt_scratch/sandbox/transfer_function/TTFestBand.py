@@ -49,7 +49,7 @@ class TTFestBand(object):
         self.weights = weights
         self.segment_weights = None
         self.channel_weigths = None
-        self.weight_type = None #["channel", "segment"]
+        self.weight_type = None #["channel", "segment", "both"]
         self.SSorRR = None
         self.xyr_are_valid()
         self.weights_are_valid()
@@ -226,6 +226,12 @@ class TTFestBand(object):
 
     def edfwts(self):
         """
+        Updates the segment weights.
+        "Effective_degrees_of_freedom_weights"
+        Returns
+        -------
+
+        """
         emulates edfwts("effective dof") from tranmt
         b: its the "input channel data" nan-masked
         dimension 2 x n_points
@@ -262,7 +268,7 @@ class TTFestBand(object):
         p2 = self.EDFparam.c2 * p1;
         p1 = self.EDFparam.c1 * p1;
 
-        # determine intial robust B-field cross-power matrix
+        # determine initial robust B-field cross-power matrix
         n_use = npts;
         n_omit = n_use;
         use = ones(npts, 1);

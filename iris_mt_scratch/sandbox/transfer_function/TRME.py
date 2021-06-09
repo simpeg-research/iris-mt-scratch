@@ -45,7 +45,7 @@ class TRME(RegressionEstimator):
         return self.Y.shape[0]
 
     def sigma(self, QTY, Y_or_Yc, cfac=1):
-        YY = np.abs(self.Y)**2
+        YY = np.abs(Y_or_Yc)**2
         QTYQTY = np.abs(QTY)**2
         sigma = cfac * np.real(sum(YY, 1) - sum(QTYQTY, 1)) / self.n_data;
         return sigma
@@ -98,7 +98,21 @@ class TRME(RegressionEstimator):
 
         if self.iter_control.max_number_of_iterations > 0:
             converged = False;
+            #the problem is in the regression esimtate you downwaeight
+            #things with large errors, but you need to define what's large
+            #you estimate the standard devation of the errors from the residuals
+            #BUT with this cleaned data approach (Yc) sigma is smaller than it
+            #should be, you need to compensate for this by using a
+            #correction_factor
+            #its basically the expectation, if the data really were
+            #gaussian, and you you estimated from the corrected data
+            #this is how much too small the estiamte would be.
             cfac = 1. / (2 * (1. - (1. + self.r0) * exp(-self.r0)));
+            #if you change the penalty functional you may need the pencil and
+            #some calculus.
+            #the relationship between the corrected-data-residuals and the
+            # gaussin residauls could change if you change the penalty
+            #
         else:
             converged = True
             E_psiPrime = 1;

@@ -162,7 +162,8 @@ def main():
         #                                            Y=Y.to_array("channel"))
         regression_estimator = RegressionEstimator(X=X, Y=Y)
         Z = regression_estimator.estimate_ols()
-
+        #Z: array([[ 0.43571599-0.06491527j, -0.18934942-0.05807046j],
+        #         [-0.21657737+0.07116618j,  0.05219818+0.06366403j]])
 
         print("ready for TF")
         qq=1
