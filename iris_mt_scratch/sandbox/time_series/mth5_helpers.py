@@ -122,6 +122,10 @@ def check_run_channels_have_expected_properties(run):
     print(hx.channel_response_filter)
     print(hx.channel_response_filter.filters_list)
     print(hx.channel_response_filter.complex_response(np.arange(3) + 1))
+    ex = run.get_channel('ex')
+    print(ex.channel_response_filter)
+    print(ex.channel_response_filter.filters_list)
+    print(ex.channel_response_filter.complex_response(np.arange(3) + 1))
     return
 
 def test_experiment_from_station_xml():

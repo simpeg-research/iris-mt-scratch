@@ -30,7 +30,6 @@ class TRME(RegressionEstimator):
     def __init__(self, **kwargs):
         super(TRME, self).__init__(**kwargs)
 
-    #def TRME(self, X, Y, iter):
 
     @property
     def r0(self):
@@ -43,6 +42,27 @@ class TRME(RegressionEstimator):
     @property
     def n_data(self):
         return self.Y.shape[0]
+
+    @property
+    def correction_factor(self):
+        """
+        In the regression esimtate you downweight things with large errors, but
+        you need to define what's large.  You estimate the standard devation
+        (sigma) of the errors from the residuals BUT with this cleaned data
+        approach (Yc) sigma is smaller than it should be, you need to
+        compensate for this by using a correction_factor. It's basically the
+        expectation, if the data really were Gaussian, and you estimated from
+        the corrected data. This is how much too small the estiamte would be.
+
+        If you change the penalty functional you may need a pencil, paper and
+        some calculus.  The relationship between the corrected-data-residuals
+        and the gaussin residauls could change if you change the penalty
+        Returns float
+        -------
+
+        """
+        cfac = 1. / (2 * (1. - (1. + self.r0) * exp(-self.r0)))
+        return cfac
 
     def sigma(self, QTY, Y_or_Yc, cfac=1):
         YY = np.abs(Y_or_Yc)**2
@@ -66,7 +86,7 @@ class TRME(RegressionEstimator):
         """
         #ITER = self.ITER;
 
-        # Q - R decomposition of design matix
+        # < Q - R decomposition of design matix>
         n_data, K = self.Y.shape
         n_X, n_param = self.X.shape
 
@@ -98,21 +118,7 @@ class TRME(RegressionEstimator):
 
         if self.iter_control.max_number_of_iterations > 0:
             converged = False;
-            #the problem is in the regression esimtate you downwaeight
-            #things with large errors, but you need to define what's large
-            #you estimate the standard devation of the errors from the residuals
-            #BUT with this cleaned data approach (Yc) sigma is smaller than it
-            #should be, you need to compensate for this by using a
-            #correction_factor
-            #its basically the expectation, if the data really were
-            #gaussian, and you you estimated from the corrected data
-            #this is how much too small the estiamte would be.
-            cfac = 1. / (2 * (1. - (1. + self.r0) * exp(-self.r0)));
-            #if you change the penalty functional you may need the pencil and
-            #some calculus.
-            #the relationship between the corrected-data-residuals and the
-            # gaussin residauls could change if you change the penalty
-            #
+            cfac = self.correction_factor
         else:
             converged = True
             E_psiPrime = 1;
@@ -174,3 +180,5 @@ class TRME(RegressionEstimator):
 
             obj.R2 = 1-diag(real(SSR))'./SSYC;
             obj.R2(obj.R2 < 0) = 0;
+            
+            

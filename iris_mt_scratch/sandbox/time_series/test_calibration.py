@@ -3,6 +3,7 @@ import numpy as np
 
 from pathlib import Path
 
+
 def load_bf4_fap_for_parkfield_test_using_qf_methods(frequencies):
     """
     This function to be removed/deprecated as soon as we have a FAP table
@@ -60,6 +61,8 @@ def parkfield_sanity_check(fft_obj, run_obj, show_response_curves=False,
         channel = run_obj.get_channel(key)
 
         # <PZRSP>
+        #owing to issue #32 in mth5 I am going to modify this to use a different
+        #way to calibrate for now
         pz_calibration_response = channel.channel_response_filter.complex_response(
             frequencies)
 

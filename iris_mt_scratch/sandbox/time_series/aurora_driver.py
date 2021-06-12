@@ -20,6 +20,7 @@ import xarray as xr
 
 from aurora.signal.windowing_scheme import WindowingScheme
 # from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
+from iris_mt_scratch.general_helper_functions import FIGURES_BUCKET
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_array_list
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data
 from iris_mt_scratch.sandbox.io_helpers.test_data import TEST_DATA_SET_CONFIGS
@@ -30,43 +31,30 @@ from iris_mt_scratch.sandbox.time_series.mth5_helpers import HEXY
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import check_run_channels_have_expected_properties
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import embed_experiment_into_run
 
-# def cast_data_to_2d_for_regression(XY):
-#     """
-#
-#     Parameters
-#     ----------
-#     XY: either X or Y of the regression nomenclature.  Should be an
-#     xarray.DataArray
-#
-#     Returns
-#     -------
-#
-#     """
-#     n_channels = len(XY.channel)
-#     tmp = XY.to_dataset("channel")
-#     n_frequency = len(XY.frequency)
-#     n_segments = len(XY.time)
-#     n_fc_per_channel = n_frequency * n_segments
-#     output_array = np.full((n_fc_per_channel, n_channels), np.nan)
-#     for i_ch, key in list(tmp.keys()):
-#         output_array[:,i_ch] = XY[key].data.ravel()
-#     return output_array
+
     
 def set_driver_parameters():
     driver_parameters = {}
     driver_parameters["run_ts_from_xml_01"] = 1#False #True
     driver_parameters["initialize_data"] = True
     driver_parameters["dataset_id"] = "pkd_test_00"
-    driver_parameters["BULK SPECTRA"] = 0#True
+    driver_parameters["BULK SPECTRA"] = True
     return driver_parameters
 
 def test_runts_from_xml(dataset_id, runts_obj=False):
     dataset_id = "pkd_test_00"
+    #
     test_dataset_config = TEST_DATA_SET_CONFIGS[dataset_id]
     inventory = test_dataset_config.get_inventory_from_iris(ensure_inventory_stages_are_named=True)
     experiment = get_experiment_from_obspy_inventory(inventory)
+
+#    experiment.surveys[0].filters["fir_fs2d5"]
+#    experiment.surveys[0].filters["fir_fs2d5"].decimation_input_sample_rate
+#    hx.channel_response_filter.filters_list[3].name
+#    hx.channel_response_filter.filters_list[3].decimation_input_sample_rate
     test_dataset_config.save_xml(experiment)
-    run_obj = embed_experiment_into_run("PKD", experiment, h5_path=Path("PKD.h5"))
+    h5_path = Path("PKD.h5")
+    run_obj = embed_experiment_into_run("PKD", experiment, h5_path=h5_path)
 
     if runts_obj:
         array_list = get_example_array_list(components_list=HEXY,
@@ -111,12 +99,15 @@ def main():
         
         
         fft_obj = windowing_scheme.apply_fft(tapered_obj)
-        from test_calibration import parkfield_sanity_check
-        figures_path = Path("~/").expanduser().joinpath(".cache", "iris_mt", "png")
+        from iris_mt_scratch.sandbox.time_series.test_calibration import \
+            parkfield_sanity_check
+        show_response_curves = False
+        show_spectra = False
         # Maybe better to make parkfield_sanity_check start from run_ts and
         # run_obj once we have run_ts behaving correct w.r.t. data channels?
-        parkfield_sanity_check(fft_obj, run_obj, figures_path=figures_path,
-                               show_response_curves=True)
+        parkfield_sanity_check(fft_obj, run_obj, figures_path=FIGURES_BUCKET,
+                               show_response_curves=show_response_curves,
+                               show_spectra=show_spectra)
         #</BULK SPECTRA CALIBRATION>
 
 
@@ -166,7 +157,6 @@ def main():
         #         [-0.21657737+0.07116618j,  0.05219818+0.06366403j]])
 
         print("ready for TF")
-        qq=1
         #extract_band(fft_obj)
         #fft_obj.extract_band(band)
         

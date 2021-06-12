@@ -24,9 +24,12 @@ import obspy
 import os
 import pandas as pd
 import pdb
-
 import xmltodict as xd
+
 from lxml import etree, objectify
+from pathlib import Path
+
+from iris_mt_scratch.general_helper_functions import FIGURES_BUCKET
 from mth5.utils.pathing import DATA_DIR
 from mth5_test_data.util import MTH5_TEST_DATA_DIR
 
@@ -118,7 +121,8 @@ def describe_inventory_stages(inventory, assign_names=False):
             for channel in station:
                 response =  channel.response
                 stages = response.response_stages
-                info = '{}-{}-{} {}-stage response'.format(network.code, station.code, channel.code, len(stages))
+                info = f"{network.code}-{station.code}-{channel.code}" \
+                    f" {len(stages)}-stage response"
                 print(info)
                 for i,stage in enumerate(stages):
                     print(f"stagename {stage.name}")
@@ -128,6 +132,19 @@ def describe_inventory_stages(inventory, assign_names=False):
                             new_name = f"{channel.code}_{i}"
                             stage.name = new_name
                             print(f"ASSIGNING stage {stage}, name {stage.name}")
+                    if hasattr(stage, "symmetry"):
+                        pass
+                        # import matplotlib.pyplot as plt
+                        # print(f"symmetry: {stage.symmetry}")
+                        # plt.figure()
+                        # plt.clf()
+                        # plt.plot(stage.coefficients)
+                        # plt.ylabel("Filter Amplitude")
+                        # plt.xlabel("Filter 'Tap'")
+                        # plt.title(f"{stage.name}; symmetry: {stage.symmetry}")
+                        # plt.savefig(FIGURES_BUCKET.joinpath(f
+                        # "{stage.name}.png"))
+                        #plt.show()
     if new_names_were_assigned:
         inventory.networks = networks
         print("NETWORKS REASSIGNED")

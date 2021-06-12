@@ -8,10 +8,20 @@ Questions for Gary:
 seems to be because it wants maximum_number_of_iterations and tolerance
 """
 
+
 class IterControl(object):
+    """
+
+    """
 
     def __init__(self):
-        self.number_of_iterations = 0;
+        """
+
+        """
+        self._number_of_iterations = 0; #private variable, wont show up in
+                                        #tab completion.
+                                        #Internal to codebase and should not
+                                        #be relied upon in functons by users.
         self.maximum_number_of_iterations = 10;
         self.tolerance = 0.005
         self.epsilon = 1000

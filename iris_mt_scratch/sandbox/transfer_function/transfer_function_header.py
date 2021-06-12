@@ -12,6 +12,7 @@ class TransferFunctionHeader(object):
 
     def __init__(self):
         """
+        Parameters
         ivar: local_site: Station header (metadata object) for local site
         (location, channel_azimuths, etc.)
         ivar: remote_site: same object type as local site

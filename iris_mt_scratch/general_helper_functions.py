@@ -1,5 +1,9 @@
 import subprocess
 
+from pathlib import Path
+
+FIGURES_BUCKET = Path.home().joinpath("Documents/IRIS_MT/figures")
+
 def execute_subprocess(cmd, **kwargs):
     """
     A wrapper for subprocess.call
