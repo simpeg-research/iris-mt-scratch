@@ -81,3 +81,29 @@ class IterControl(object):
     def redescend_maxxed_out(self):
         pass
         #   if self.number_of_redescending_iterations >
+
+
+    @property
+    def correction_factor(self):
+        """
+        TODO: Note that IterControl itself should probably be factored.
+        A base class can be responsible for iteration_watcher and convergence checks
+        etc.  But u0, and r0 are specific to the Robust methods.
+
+        In the regression esimtate you downweight things with large errors, but
+        you need to define what's large.  You estimate the standard devation
+        (sigma) of the errors from the residuals BUT with this cleaned data
+        approach (Yc) sigma is smaller than it should be, you need to
+        compensate for this by using a correction_factor. It's basically the
+        expectation, if the data really were Gaussian, and you estimated from
+        the corrected data. This is how much too small the estiamte would be.
+
+        If you change the penalty functional you may need a pencil, paper and
+        some calculus.  The relationship between the corrected-data-residuals
+        and the gaussin residauls could change if you change the penalty
+        Returns float
+        -------
+
+        """
+        cfac = 1. / (2 * (1. - (1. + self.r0) * exp(-self.r0)))
+        return cfac

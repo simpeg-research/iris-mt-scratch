@@ -28,7 +28,7 @@ def extract_band(interval, fft_obj):
     Parameters
     ----------
     interval
-    fft_obj
+    fft_obj: xr.DataArray
 
     Returns
     -------
@@ -47,6 +47,18 @@ def extract_band(interval, fft_obj):
 
 
 def extract_band2(interval, fft_obj, epsilon=1e-7):
+    """
+
+    Parameters
+    ----------
+    interval
+    fft_obj: xr.DataArray
+    epsilon
+
+    Returns
+    -------
+
+    """
     cond1 = fft_obj.frequency >= interval.lower_bound - epsilon
     cond2 = fft_obj.frequency <= interval.upper_bound + epsilon
 

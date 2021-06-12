@@ -20,7 +20,9 @@ import xarray as xr
 
 from aurora.signal.windowing_scheme import WindowingScheme
 # from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
+from iris_mt_scratch.general_helper_functions import DATA_DIR
 from iris_mt_scratch.general_helper_functions import FIGURES_BUCKET
+from iris_mt_scratch.general_helper_functions import read_complex, save_complex
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_array_list
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data
 from iris_mt_scratch.sandbox.io_helpers.test_data import TEST_DATA_SET_CONFIGS
@@ -38,7 +40,7 @@ def set_driver_parameters():
     driver_parameters["run_ts_from_xml_01"] = 1#False #True
     driver_parameters["initialize_data"] = True
     driver_parameters["dataset_id"] = "pkd_test_00"
-    driver_parameters["BULK SPECTRA"] = True
+    driver_parameters["BULK SPECTRA"] = False#True
     return driver_parameters
 
 def test_runts_from_xml(dataset_id, runts_obj=False):
@@ -134,8 +136,8 @@ def main():
     print(f"Lower Bound:{frequencies[0]}, Upper bound:{frequencies[-1]}")
     from frequency_bands import spectral_gates_and_fenceposts
     from frequency_bands import BandAveragingScheme
-    from frequency_bands import extract_band
-    from frequency_bands import extract_band2
+    from iris_mt_scratch.sandbox.time_series.frequency_bands import extract_band
+    from iris_mt_scratch.sandbox.time_series.frequency_bands import extract_band2
     fenceposts = spectral_gates_and_fenceposts(frequencies[0], frequencies[
         -1], num_bands=8)
     band_averaging_scheme = BandAveragingScheme(fence_posts=fenceposts)
@@ -144,11 +146,19 @@ def main():
         band_data = extract_band(band, stft_obj_xrda)
         band_data2 = extract_band2(band, stft_obj_xrda)
         band_dataset = band_data2.to_dataset("channel")
+        band_dataarray = band_dataset.to_array("channel")
+        band_file = DATA_DIR.joinpath("bandtest.nc")
+        save_complex(band_dataarray, band_file)
+        qq = read_complex(band_file)
+        band_dataset = qq.to_dataset("channel")
+        #band_dataset.to_netcdf(DATA_DIR.joinpath("band_dataset"),
+        #                       format="NETCDF4")
         X = band_dataset[["hx", "hy"]]
         #X = X.to_array("channel")
         Y = band_dataset[["ex", "ey"]]
         #Y = Y.to_array("channel")
         from iris_mt_scratch.sandbox.transfer_function.TRegression import RegressionEstimator
+
         # regression_estimator = RegressionEstimator(X=X.to_array("channel"),
         #                                            Y=Y.to_array("channel"))
         regression_estimator = RegressionEstimator(X=X, Y=Y)
@@ -156,6 +166,11 @@ def main():
         #Z: array([[ 0.43571599-0.06491527j, -0.18934942-0.05807046j],
         #         [-0.21657737+0.07116618j,  0.05219818+0.06366403j]])
 
+        #Z: array([[0.41464914 - 0.09269744j, -0.14563335 - 0.07932368j],
+        #       [-0.18650074 + 0.07459541j, 0.03722138 + 0.06684994j]])
+
+        #Z: array([[0.43571599 - 0.06491527j, -0.18934942 - 0.05807046j],
+               [-0.21657737 + 0.07116618j, 0.05219818 + 0.06366403j]])
         print("ready for TF")
         #extract_band(fft_obj)
         #fft_obj.extract_band(band)

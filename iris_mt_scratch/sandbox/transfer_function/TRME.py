@@ -23,7 +23,8 @@ obj = TRME(X=X, Y=Y, iter_control=iter)
 """
 import numpy as np
 
-from TRegression import RegressionEstimator
+from iris_mt_scratch.sandbox.transfer_function.TRegression import \
+    RegressionEstimator
 
 class TRME(RegressionEstimator):
 
@@ -43,26 +44,6 @@ class TRME(RegressionEstimator):
     def n_data(self):
         return self.Y.shape[0]
 
-    @property
-    def correction_factor(self):
-        """
-        In the regression esimtate you downweight things with large errors, but
-        you need to define what's large.  You estimate the standard devation
-        (sigma) of the errors from the residuals BUT with this cleaned data
-        approach (Yc) sigma is smaller than it should be, you need to
-        compensate for this by using a correction_factor. It's basically the
-        expectation, if the data really were Gaussian, and you estimated from
-        the corrected data. This is how much too small the estiamte would be.
-
-        If you change the penalty functional you may need a pencil, paper and
-        some calculus.  The relationship between the corrected-data-residuals
-        and the gaussin residauls could change if you change the penalty
-        Returns float
-        -------
-
-        """
-        cfac = 1. / (2 * (1. - (1. + self.r0) * exp(-self.r0)))
-        return cfac
 
     def sigma(self, QTY, Y_or_Yc, cfac=1):
         YY = np.abs(Y_or_Yc)**2
@@ -94,7 +75,7 @@ class TRME(RegressionEstimator):
             print('data (Y) and design matrix (X) must have same number of '
                   'rows')
 
-        if n_param > n_data:
+        if self.n_param > self.n_data:
             # overdetermined problem...use svd to invert, return
             # NOTE: the solution IS non - unique... and by itself RME is not set
             # up to do anything sensible to resolve the non - uniqueness(no
@@ -118,7 +99,7 @@ class TRME(RegressionEstimator):
 
         if self.iter_control.max_number_of_iterations > 0:
             converged = False;
-            cfac = self.correction_factor
+            cfac = self.iter_control.correction_factor
         else:
             converged = True
             E_psiPrime = 1;
