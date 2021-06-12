@@ -30,7 +30,7 @@ def extract_band(interval, fft_obj):
     interval
     fft_obj: xr.DataArray
 
-    Returns
+    Returns numpy array
     -------
 
     """
@@ -55,7 +55,7 @@ def extract_band2(interval, fft_obj, epsilon=1e-7):
     fft_obj: xr.DataArray
     epsilon
 
-    Returns
+    Returns xr.DataArray
     -------
 
     """

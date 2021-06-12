@@ -16,12 +16,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.signal as ssig
+import time
 import xarray as xr
 
+t0 = time.time()
 from aurora.signal.windowing_scheme import WindowingScheme
 # from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
 from iris_mt_scratch.general_helper_functions import DATA_DIR
 from iris_mt_scratch.general_helper_functions import FIGURES_BUCKET
+from iris_mt_scratch.general_helper_functions import TEST_BAND_FILE
 from iris_mt_scratch.general_helper_functions import read_complex, save_complex
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_array_list
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data
@@ -143,52 +146,19 @@ def main():
     band_averaging_scheme = BandAveragingScheme(fence_posts=fenceposts)
     for i_band in range(band_averaging_scheme.number_of_bands):
         band = band_averaging_scheme.band(i_band)
-        band_data = extract_band(band, stft_obj_xrda)
-        band_data2 = extract_band2(band, stft_obj_xrda)
-        band_dataset = band_data2.to_dataset("channel")
-        band_dataarray = band_dataset.to_array("channel")
-        band_file = DATA_DIR.joinpath("bandtest.nc")
-        save_complex(band_dataarray, band_file)
-        qq = read_complex(band_file)
-        band_dataset = qq.to_dataset("channel")
-        #band_dataset.to_netcdf(DATA_DIR.joinpath("band_dataset"),
-        #                       format="NETCDF4")
-        X = band_dataset[["hx", "hy"]]
-        #X = X.to_array("channel")
-        Y = band_dataset[["ex", "ey"]]
-        #Y = Y.to_array("channel")
-        from iris_mt_scratch.sandbox.transfer_function.TRegression import RegressionEstimator
+        #band_data = extract_band(band, stft_obj_xrda)
+        band_da = extract_band2(band, stft_obj_xrda)
+        save_band = False
+        if save_band:
+            save_complex(band_da, TEST_BAND_FILE)
+            band_da = read_complex(TEST_BAND_FILE)
 
-        # regression_estimator = RegressionEstimator(X=X.to_array("channel"),
-        #                                            Y=Y.to_array("channel"))
-        regression_estimator = RegressionEstimator(X=X, Y=Y)
-        Z = regression_estimator.estimate_ols()
-        #Z: array([[ 0.43571599-0.06491527j, -0.18934942-0.05807046j],
-        #         [-0.21657737+0.07116618j,  0.05219818+0.06366403j]])
-
-        #Z: array([[0.41464914 - 0.09269744j, -0.14563335 - 0.07932368j],
-        #       [-0.18650074 + 0.07459541j, 0.03722138 + 0.06684994j]])
-
-        #Z: array([[0.43571599 - 0.06491527j, -0.18934942 - 0.05807046j],
-               [-0.21657737 + 0.07116618j, 0.05219818 + 0.06366403j]])
+        from iris_mt_scratch.sandbox.transfer_function\
+            .transfer_function_driver import test_regression
+        Z = test_regression(band_da)
+        print(f"elapsed {time.time()-t0}")
         print("ready for TF")
-        #extract_band(fft_obj)
-        #fft_obj.extract_band(band)
-        
-    key = "hy"
-    channel = run_obj.get_channel(key)
-    pz_calibration_response = channel.channel_response_filter.complex_response(frequencies)
-    calibrated_spectra = fft_obj[key].data[:, 2:] / pz_calibration_response
-#    raw_spectral_density = np.abs(fft_obj[key].data[:, 1:])
 
-    mean_spectrum = np.mean(np.abs(calibrated_spectra), axis=0)
-
-    plt.figure(2)
-    plt.clf()
-    plt.loglog(frequencies, np.abs(mean_spectrum), 'b*' )
-    plt.grid(True, which="both", ls="-")
-    plt.show()
-    #</DEFINE WINDOWING/TAPER PARAMETERS>
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ import iris_mt_scratch
 
 init_file = inspect.getfile(iris_mt_scratch)
 DATA_DIR = Path(init_file).parent.joinpath("sandbox", "data")
-
+TEST_BAND_FILE = DATA_DIR.joinpath("bandtest.nc")
 
 FIGURES_BUCKET = Path.home().joinpath("Documents/IRIS_MT/figures")
 
