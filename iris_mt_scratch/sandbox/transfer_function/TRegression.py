@@ -116,7 +116,11 @@ class RegressionEstimator(object):
             XY = XY.to_dataset("channel")
         n_channels = len(XY)
         n_frequency = len(XY.frequency)
-        n_segments = len(XY.time)
+        try:
+            n_segments = len(XY.time)
+        except TypeError:
+            n_segments = 1
+            #overdetermined problem
         n_fc_per_channel = n_frequency * n_segments
 
         output_array = np.full((n_fc_per_channel, n_channels),
@@ -146,7 +150,9 @@ class RegressionEstimator(object):
 
     def estimate(self):
         print("this method is not defined for the abstract base class")
-        return None
+        print("But we put OLS in here for dev")
+        Z = self.estimate_ols()
+        return Z
 
     def check_number_of_observations_xy_consistent(self):
         if self.Y.shape[0] != self.X.shape[0]:
@@ -161,5 +167,12 @@ class RegressionEstimator(object):
     def n_param(self):
         return self.X.shape[1]
 
+    @property
+    def n_channels_out(self):
+        """ number of dependent variables"""
+        return self.Y.shape[1]
 
+    @property
+    def is_overdetermined(self):
+        return self.n_param > self.n_data
 

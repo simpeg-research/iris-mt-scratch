@@ -7,7 +7,7 @@ Questions for Gary:
 1. why does this class need arguments in pairs?
 seems to be because it wants maximum_number_of_iterations and tolerance
 """
-
+import numpy as np
 
 class IterControl(object):
     """
@@ -22,7 +22,7 @@ class IterControl(object):
                                         #tab completion.
                                         #Internal to codebase and should not
                                         #be relied upon in functons by users.
-        self.maximum_number_of_iterations = 10;
+        self.max_number_of_iterations = 10;
         self.tolerance = 0.005
         self.epsilon = 1000
 
@@ -31,7 +31,7 @@ class IterControl(object):
         self.r0 = 1.5
         self.redescend = False
         self.number_of_redescending_iterations = 0
-        self.maximum_number_of_redescending_iterations = 1
+        self.max_number_of_redescending_iterations = 1
         self.u0 = 2.8 #what is it?
         # </regression-M estimator params>
 
@@ -66,9 +66,9 @@ class IterControl(object):
 
         converged = False
         b *= 1.0 #float
-        maximum_change = max(abs(1 - b/b0))
+        maximum_change = np.max(np.abs(1 - b/b0))
         cond1 = maximum_change > self.tolerance
-        cond2 = self.number_of_iterations < self.maximum_number_of_iterations
+        cond2 = self.number_of_iterations < self.max_number_of_iterations
 
         if cond1 & cond2:
             converged = False
@@ -105,5 +105,5 @@ class IterControl(object):
         -------
 
         """
-        cfac = 1. / (2 * (1. - (1. + self.r0) * exp(-self.r0)))
+        cfac = 1. / (2 * (1. - (1. + self.r0) * np.exp(-self.r0)))
         return cfac
