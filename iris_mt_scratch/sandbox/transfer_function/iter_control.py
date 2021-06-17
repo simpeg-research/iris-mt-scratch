@@ -22,23 +22,30 @@ class IterControl(object):
                                         #tab completion.
                                         #Internal to codebase and should not
                                         #be relied upon in functons by users.
-        self.max_number_of_iterations = 10;
+        self.max_number_of_iterations = 10; #0 for OLS
         self.tolerance = 0.005
         self.epsilon = 1000
 
         #<regression-M estimator params>
         #separate block/class, etc.
-        self.r0 = 1.5
+        self.r0 = 1.5   #infinty for OLS
+        #L2 norm between 0 and 1.5 stderr
+        #L1 norm above r0 (large residuals)
         self.redescend = False
         self.number_of_redescending_iterations = 0
-        self.max_number_of_redescending_iterations = 1
+        self.max_number_of_redescending_iterations = 1 #2 at most is fine
         self.u0 = 2.8 #what is it?
+        # u0 is a parameter for the redescending
+        #some double exponential formula and u0 controlls it
+        # it makes for severe downweigthing about u0
+        # its a continuous function so its "math friendly"
+        #and you can prove theroems about it etc.
         # </regression-M estimator params>
 
 
         #<Additional properties>
         # #sed sometimes to control one or another of the iterative algorithms
-        self.return_covariance = True
+        self.return_covariance = False
         self.save_cleaned = False
         self.robust_diagonalize = False
         # </Additional properties>

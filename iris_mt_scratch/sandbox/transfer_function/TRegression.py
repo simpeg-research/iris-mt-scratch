@@ -175,4 +175,6 @@ class RegressionEstimator(object):
     @property
     def is_overdetermined(self):
         return self.n_param > self.n_data
+    
+    #ADD NAN MANAGEMENT HERE
 

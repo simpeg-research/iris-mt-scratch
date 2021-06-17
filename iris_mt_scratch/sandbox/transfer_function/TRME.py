@@ -88,6 +88,14 @@ class TRME(RegressionEstimator):
 
     @property
     def n_data(self):
+        """
+        TODO: This method is superceeding the n_data method of the base class
+        REview if this is appropriate.
+        See Also Issue#7 in aurora github
+        Returns
+        -------
+
+        """
         return self.Y.shape[0]
 
     @property
@@ -110,6 +118,16 @@ class TRME(RegressionEstimator):
         QHY
         Y_or_Yc
         cfac
+        Y2 is the norm sqaured of the data, and
+        QQHY is the projected (and predicted) data...
+        The predicted data has to lie in span of the columns in the
+        design matrix X.
+        The predicted data has to be a linear combination of the
+        columns of b.
+        Q is an orthoganal basis for the columns of X
+        So the predicted data is Q*QH*X
+        Write it out by hand and you'll see it.
+        The norms of QQHY  and the length of QHY are the same
 
         Returns
         -------
@@ -136,6 +154,8 @@ class TRME(RegressionEstimator):
 
         """
         print("STILL NEEDS TO BE TRANSLATED")
+        #Return None /nan and flag it is a valid solution
+        #for aurora 2021 Sept.
         U, s, V = np.linalg.svd(self.X, full_matrices=False)
         #[u, s, v] = svd(self.X, 'econ');
         sInv = 1. / diag(s);
@@ -156,6 +176,20 @@ class TRME(RegressionEstimator):
         inputs are data (Y) and predicted (YP), estiamted
         error variances (for each column) and Huber parameter r0
         allows for multiple columns of data
+
+        E_psiPrime : Expectation value of psi'
+        recall start with the loss function rho
+        The derivative of the loss function rho is psi
+        (psi is called the influence function)
+
+        Think about the huber loss function (quadratic out to r0, after
+        which it is linear).
+        Psi is -1 until you get to -r0, then it increases linearly
+        to 1 (r0)
+        Psi' is something like 1 between -r0, and r0
+        Psi' is zero outside
+        So the expectiaon value of psi' is the number of points outside
+        its the number of points that didnt get weighted /total number of points
         """
         K = self.n_channels_out
         YC = self.Y.copy() #may need copy here to leave Y as it is ... maybe not
@@ -168,6 +202,16 @@ class TRME(RegressionEstimator):
             E_psiPrime[k] = 1.0 * np.sum(w == 1) / self.n_data;
         self.Yc = YC
         return E_psiPrime
+
+    def qr_decomposition(self, X, sanity_check=False):
+        [Q, R] = np.linalg.qr(X)
+        if sanity_check:
+            if np.isclose(np.matmul(Q, R) - self.X, 0).all():
+                pass
+            else:
+                print("Failed QR decompostion sanity check")
+                raise Exception
+        return Q, R
 
     def estimate(self):
         """
@@ -183,22 +227,14 @@ class TRME(RegressionEstimator):
         -------
 
         """
-        #<CHECK IF SYSTEM OVERDETERMINED>
         if self.is_overdetermined:
             b0 = self.solve_overdetermined()
             return b0
 
-        # < QR decomposition of design matix>
-        [Q, R] = np.linalg.qr(self.X)
-        if np.isclose(np.matmul(Q, R) - self.X, 0).all():
-            pass
-        else:
-            print("Failed QR decompostion sanity check")
-            raise Exception
+        Q, R = self.qr_decomposition(self.X)
+
         # initial LS estimate b0, error variances sigma
         QHY = np.matmul(np.conj(Q.T), self.Y)
-        print("MLDIVIDE")
-        print("MLDIVIDE")
         b0 = solve_triangular(R, QHY)
 
         sigma = self.sigma(QHY, self.Y)
@@ -222,7 +258,11 @@ class TRME(RegressionEstimator):
             #HuberWt(Y, YP, sig, r0)
             # cleaned data
             #updated error variance estimates, computed using cleaned data
+            #
+            print("WARNING CHECK IF Q.T should be np.conj(Q.T), i.e. QH")
             QHYc = np.matmul(Q.T, self.Yc)
+            #anyways, here we are halfways projecting the Cleaned data
+            #this varaiable is the analog to QHY
             self.b = solve_triangular(R, QHYc) #self.b = R\QTY;
             sigma = self.sigma(QHYc, self.Yc, cfac=self.correction_factor)
             converged = self.iter_control.converged(self.b, b0);
@@ -234,7 +274,7 @@ class TRME(RegressionEstimator):
                     self.iter_control.maximum_number_of_redescending_iterations:
                 self.iter_control.number_of_redescending_iterations += 1
                 # one obj with redescending influence curve
-                YP = np.matmul(Q, QTY)
+                YP = np.matmul(Q, QHYc)
                 # cleaned data
                 [self.Yc, E_psiPrime] = RedescendWt(self.Y, YP, sigma, ITER.u0);
                 # updated error variance estimates, computed using cleaned data
@@ -250,6 +290,7 @@ class TRME(RegressionEstimator):
             E_psiPrime = 2 * E_psiPrime - 1;
 
         result = self.b;
+        return self.b
         if self.iter_control.return_covariance:
             # compute error covariance matrices
             print("INVINV")
@@ -282,5 +323,6 @@ class TRME(RegressionEstimator):
             print("UGH")
             print("UGH")
             #obj.R2(obj.R2 < 0) = 0;
+    #return self.b
             
             

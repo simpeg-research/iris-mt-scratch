@@ -1,8 +1,17 @@
 #TODO: replace "fence_posts" with "band_edges"
+
 import numpy as np
+from pathlib import Path
 
 from interval import Interval
 from interval import IntervalSet
+
+from emtf_band_setup import EMTFBandSetupFile
+
+class FrequencyBand(Interval):
+    def __init__(self, **kwargs):
+        pass
+
 
 def compute_quantile(data):
     """
@@ -119,15 +128,42 @@ def spectral_gates_and_fenceposts(f_lower_bound, f_upper_bound,
     print(f"fence posts = {fence_posts}")
     return fence_posts
 
+
+class FrequencyBands(object):
+    """
+    Use this as the core element for BandAveragingScheme
+    """
+    def __init__(self, **kwargs):
+        self.gates = None
+        self.fence_posts = kwargs.get("fence_posts", None)
+        #frequencies ... can repeat (log spacing)
+
+    def from_emtf_cfg(self, filepath, decimation_level):
+        w
+
+
+
 class BandAveragingScheme(object):
     """
-    Context: A band is an Interval(). Use Interval() or IntervalSet()?
+    Context: A band is an Interval(). 
+    A band_averaging_scheme can be represented as an IntervalSet()
 
+    This should support multiple decimation levels.
+    For now, let's make it for a single decimation level.  There can be a
+    collection of band_avergaing_schemes keyed by decimation_level_id
+
+    May want to rename this as a BandDefinition and a BandAveragingScheme can be
+    a  decimation level aggregated collection of BandDefinations
+
+
+    
     What do we want from this class?
     1. We want to be able to generate a sequence of indices that correspond to
     the indices of an array that we will average together.  I.e. [5,6,7] will
     for example grab the 5th, 6th and 7th Fourier coefficient from an array
     and return the band with the average value.
+
+
 
     2. We want to be able to access bands by some label (often this will just be an integer)
     band1, band2, or "low-frequency" or "dead band" etc.
@@ -186,6 +222,9 @@ class BandAveragingScheme(object):
 
         return ivl
 
+    def center_frequency(self, band):
+        pass
+
     def plot(self):
         #placeholder: show a plot of the band edges (dots) with x's in
         # between indicating the Fourier coefficient bins within each band
@@ -207,7 +246,19 @@ def test_instantiate_band_averaging_scheme():
     print("OK")
     pass
 
+def test_emtf_band_setup():
+    #filepath = Path("bs_test.cfg")
+    filepath = Path("bs_256.cfg")
+    emtf_band_setup = EMTFBandSetupFile(filepath=filepath)
+    emtf_band_setup.load()
+    dec_1 = emtf_band_setup.get_decimation_level(1)
+    print(dec_1)
+    print("ok")
+    return
+
+
 def main():
+    test_emtf_band_setup()
     test_instantiate_band_averaging_scheme()
     pass
 
