@@ -29,6 +29,8 @@ from iris_mt_scratch.general_helper_functions import read_complex, save_complex
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_array_list
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data
 from iris_mt_scratch.sandbox.io_helpers.test_data import TEST_DATA_SET_CONFIGS
+from iris_mt_scratch.sandbox.time_series.frequency_band_helpers import extract_band
+from iris_mt_scratch.sandbox.time_series.frequency_band_helpers import frequency_band_edges
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import cast_run_to_run_ts
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import get_experiment_from_obspy_inventory
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import get_experiment_from_xml_path
@@ -37,13 +39,15 @@ from iris_mt_scratch.sandbox.time_series.mth5_helpers import check_run_channels_
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import embed_experiment_into_run
 
 
+
     
 def set_driver_parameters():
     driver_parameters = {}
     driver_parameters["run_ts_from_xml_01"] = 1#False #True
     driver_parameters["initialize_data"] = True
     driver_parameters["dataset_id"] = "pkd_test_00"
-    driver_parameters["BULK SPECTRA"] = False#True
+    driver_parameters["BULK SPECTRA"] = False
+
     return driver_parameters
 
 def test_runts_from_xml(dataset_id, runts_obj=False):
@@ -120,10 +124,11 @@ def main():
     filters_dict = experiment.surveys[0].filters
     #<DEFINE WINDOWING/TAPER PARAMETERS>
     windowing_scheme = WindowingScheme(taper_family="hamming",
-                                       num_samples_window=512,
+                                       num_samples_window=256,
                                        num_samples_overlap=192,
                                        sampling_rate=40.0)
     windowed_obj = windowing_scheme.apply_sliding_window(pkd_mvts.dataset)
+
     print("windowed_obj", windowed_obj)
 
     tapered_obj = windowing_scheme.apply_taper(windowed_obj)
@@ -137,13 +142,19 @@ def main():
 
     frequencies = stft_obj.frequency.data[1:]
     print(f"Lower Bound:{frequencies[0]}, Upper bound:{frequencies[-1]}")
-    from frequency_bands import spectral_gates_and_fenceposts
+    print("ITS TIME FOR BANDS")
+    print("BY DEFUALT WE WILL USE A GATES AND FENCEPOSTS APPROACH")
+    print("BUT FOR ZERO LEVEL DEV LETS USE AN EMTF FILE")
     from frequency_bands import BandAveragingScheme
-    from iris_mt_scratch.sandbox.time_series.frequency_band_helpers import
-        extract_band
-    fenceposts = spectral_gates_and_fenceposts(frequencies[0], frequencies[
-        -1], num_bands=8)
-    band_averaging_scheme = BandAveragingScheme(fence_posts=fenceposts)
+    from iris_mt_scratch.sandbox.time_series.frequency_band import FrequencyBands
+
+    emtf_band_setup_file = "bs_256.cfg"
+    #band_averaging_scheme = BandAveragingScheme(
+    # emtf_band_setup=emtf_band_setup_file)
+    # band_averaging_scheme = BandAveragingScheme(windowing_scheme.sampling_rate,
+    #                                             windowing_scheme.num_samples_window)
+    fenceposts = frequency_band_edges(frequencies[0], frequencies[-1], num_bands=8)
+    band_averaging_scheme = FrequencyBands(fence_posts=fenceposts)
     for i_band in range(band_averaging_scheme.number_of_bands):
         band = band_averaging_scheme.band(i_band)
         band_da = extract_band(band, stft_obj_xrda)
