@@ -9,70 +9,129 @@ from interval import IntervalSet
 from emtf_band_setup import EMTFBandSetupFile
 
 class FrequencyBand(Interval):
+    """
+    Extends the interval class.
+
+    has a lower bound, an upper bound and a central frequency
+
+    These are intervals
+    an method for Fourier coefficient indices
+
+    Some thoughts 20210617:
+
+    TLDR:
+    For simplicity, I'm going with Half open, df/2 intervals when they are
+    perscribed by FC indexes, and half_open gates_and_fenceposts when they
+    are not.  The gates and fenceposts can be converted to the percribed form by
+    mapping to emtf_band_setup_form and then mapping to FCIndex form.
+    A 3dB point correction etc maybe done in a later version.
+
+    <ON DEFAULT FREQUENCY BAND CONFIGURATIONS>
+    Because these are Interval()s there is a little complication:
+    If we use closed intervals we can have an issue with the same Fourier 
+    coefficient being in more than one band [a,b],[b,c] if b corresponds to a harmonic.
+    Honestly this is not a really big deal, but it feels sloppy. The default
+    behaviour should partition the frequency axis, not break it into sets with
+    non-zero overlap, even though the overlapping sets are of measure zero.
+
+    On the other hand, it is common enough (at low frequency) to have bands
+    which are only 1 Harmonic wide, and if we dont use closed intervals we
+    can wind up with intervals like [a,a), which is the empty set.
+
+    The best solution I can think of for now incorporates the fact that the
+    harmonic frequencies we are going to interact with in digital processing
+    will be a discrete collection, basically fftfreqs, which are separated by df.
+
+    If we are given the context of df (= 1/(N*dt)) wher N is number of
+    samples in the original time series and dt is the sample interval,
+    then we can use half-open intervals with width df centered at the
+    frequencies under consideration.
+    
+    I.e since the actual picking of Fourier coefficients and indexes will
+    always occur in the context of a sampling rate and a frequency axis and 
+    we will know df and therefore we can pad the frequency bounds by +/-
+    df/2.
+
+    In that case we can use open, half open, or closed intervals, it really
+    doesn't matter, so we will choose half open
+    [f_i-df/2, f_i+df/2) to get the satisfying property of covering the
+    frequency axis completely but ensure no accidental double coverage.
+
+    Notes that this is just a default convention.  There is no rule against
+    using closed intervals, nor having overlapping bands.
+
+    The df/2 trick also protects us from numeric roundoff errors resulting in
+    edge frequencies landing in a bin other than that which is intended.
+
+    There is one little oddity which accompanies this scheme.  Consider the
+    case where you have a 1-harmonic wide band, say at 10Hz.  And df for
+    arguments sake is 0.05 Hz.  The center frequency harmonically will not
+    evaluate to 10Hz exactly, rather it will evaluate to sqrt((
+    9.95*10.05))=9.9999874, and not 10.  This is a little bit unsatisfying
+    but I take solace in two things:
+    1. The user is welcome to use their own convention, [10.0, 10.0], or even
+    [10.0-epsilon , 10.0+epsilon] if worried about numeric ghosts which
+    asymptotes to 10.0
+    2.  I'm not actually 100% sure that the geometric center frequency of the
+    harmonic at 10Hz is truly 10.0.  Afterall a band has finite width even if
+    the harmonic is a Dirac spike.
+
+    At the end of the day we need to choose something, so its half-open,
+    lower-closed intervals by default.
+
+    Here's a good webpage with formulas if we want to get really fancy with
+    3dB band edges.
+    http://www.sengpielaudio.com/calculator-cutoffFrequencies.htm
+
+    </ON DEFAULT FREQUENCY BAND CONFIGURATIONS>
+
+
+    """
     def __init__(self, **kwargs):
-        pass
+        Interval.__init__(self,**kwargs)
 
 
-def compute_quantile(data):
-    """
-    receive a 3D array
-    Parameters
-    ----------
-    data
+    def fourier_coefficient_indices(self, frequencies):
+        """
 
-    Returns
-    -------
+        Parameters
+        ----------
+        frequencies: numpy array
+            Intended to represent the one-sided frequency axis of the data
+            that has been FFT-ed
 
-    """
+        Returns
+        -------
 
-def extract_band(interval, fft_obj):
-    """
-    will likely be a method of windowing_scheme or FrequencyDomainRun()
-
-    Make the core, underlying numeric (numpy based method) take lower and upper
-    bounds explicitly, i.e. remove dependance on Interval()
-
-    ToDo: Make this method check for the "channel" dimension of fft_obj
-    ToDo: Make this accept indices as well as interval as argument
-    Parameters
-    ----------
-    interval
-    fft_obj: xr.DataArray
-
-    Returns numpy array
-    -------
-
-    """
-    epsilon = 1e-7
-    frequencies = fft_obj.frequency.data
-
-    cond1 = frequencies >= interval.lower_bound - epsilon
-    cond2 = frequencies <= interval.upper_bound + epsilon
-    indices = cond1 & cond2
-
-    data = fft_obj.data[:, :, indices]
-
-    return data
+        """
+        cond1 = frequencies >= self.lower_bound
+        cond2 = frequencies >= self.upper_bound
+        indices = np.where(cond1 & cond2)[0]
+        return indices
 
 
-def extract_band2(interval, fft_obj, epsilon=1e-7):
-    """
+    def in_band_harmonics(self, frequencies):
+        indices = self.fourier_coefficient_indices(frequencies)
+        harmonics = frequencies[indices]
+        return harmonics
 
-    Parameters
-    ----------
-    interval
-    fft_obj: xr.DataArray
-    epsilon
 
-    Returns xr.DataArray
-    -------
+    def center_frequency(self, frequencies=None):
+        """
+        if frequencies are provided, return the true
+        Parameters
+        ----------
+        frequencies
 
-    """
-    cond1 = fft_obj.frequency >= interval.lower_bound - epsilon
-    cond2 = fft_obj.frequency <= interval.upper_bound + epsilon
+        Returns
+        -------
 
-    band = fft_obj.where(cond1 & cond2, drop=True)
-    return band
+        """
+        return np.sqrt(self.lower_bound*self.upper_bound)        
+
+
+
+
 
 
 def spectral_gates_and_fenceposts(f_lower_bound, f_upper_bound,

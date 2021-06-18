@@ -139,15 +139,14 @@ def main():
     print(f"Lower Bound:{frequencies[0]}, Upper bound:{frequencies[-1]}")
     from frequency_bands import spectral_gates_and_fenceposts
     from frequency_bands import BandAveragingScheme
-    from iris_mt_scratch.sandbox.time_series.frequency_bands import extract_band
-    from iris_mt_scratch.sandbox.time_series.frequency_bands import extract_band2
+    from iris_mt_scratch.sandbox.time_series.frequency_band_helpers import
+        extract_band
     fenceposts = spectral_gates_and_fenceposts(frequencies[0], frequencies[
         -1], num_bands=8)
     band_averaging_scheme = BandAveragingScheme(fence_posts=fenceposts)
     for i_band in range(band_averaging_scheme.number_of_bands):
         band = band_averaging_scheme.band(i_band)
-        #band_data = extract_band(band, stft_obj_xrda)
-        band_da = extract_band2(band, stft_obj_xrda)
+        band_da = extract_band(band, stft_obj_xrda)
         save_band = False
         if save_band:
             save_complex(band_da, TEST_BAND_FILE)
