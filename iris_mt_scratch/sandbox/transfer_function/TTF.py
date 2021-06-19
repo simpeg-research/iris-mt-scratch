@@ -7,6 +7,7 @@ iris_mt_scratch/egbert_codes-20210121T193218Z-001/egbert_codes/matlabPrototype_1
 import numpy as np
 import xarray as xr
 
+
 class TTF(object):
     """
     Class to contain transfer function array.
@@ -51,14 +52,15 @@ class TTF(object):
     Nout
     Nin
     """
-    def __init__(self, num_bands, tf_header):
+    def __init__(self, tf_header, num_bands):
+        print("TODO: change self.T to self.period")
         self.tf_header = tf_header
         self.num_bands = num_bands #it would be nice if this was a property
         # that depended on some other attr of the processing scheme... surely
         # this number is already known-- it comes from the data being processed
-        self.T = None #?
+        self.T = None # replace with periods
         self.num_segments = None
-        self.periods = None
+        #self.periods = None
         self.Cov_SS = None
         self.Cov_NN = None
         self.R2 = None
@@ -66,6 +68,8 @@ class TTF(object):
         if self.tf_header is not None:
             if self.num_bands is not None:
                 self._initialize_arrays()
+
+
 
     def _initialize_arrays(self):
         """
@@ -78,17 +82,30 @@ class TTF(object):
 
         """
         if self.tf_header is not None:
+            self.T =  np.zeros(self.num_bands)
             self.TF = np.zeros((self.num_channels_out, self.num_channels_in,
-                               self.num_bands))
+                               self.num_bands), dtype=np.complex128)
             self.num_segments = np.zeros((self.num_channels_out,
                                           self.num_bands))
-            self.periods = np.zeros(self.num_bands);
             self.Cov_SS = np.zeros((self.num_channels_in,
                                    self.num_channels_in, self.num_bands))
             self.Cov_NN = np.zeros((self.num_channels_out,
                                    self.num_channels_out, self.num_bands))
             self.R2 = np.zeros((self.num_channels_out, self.num_bands))
             self.initialized = True
+
+    @property
+    def periods(self):
+        return self.T
+
+    @property
+    def minimum_period(self):
+        return np.min(self.periods)
+
+    @property
+    def maximum_period(self):
+        return np.max(self.periods)
+
 
     @property
     def num_channels_in(self):
@@ -120,58 +137,61 @@ class TTF(object):
         # if any(size(TRegObj.b)~=[obj.Nin obj.Nout])
         #     error('Regression object not consistent with declared dimensions of TF')
         #     raise Exception
-
-        self.TF[:,:, i_band] = regression_estimator.b.T #check dims are consitent
-        self.Cov_NN[:,:, i_band] = regression_estimator.Cov_NN
-        self.Cov_SS[:,:, i_band] = regression_estimator.Cov_SS;
         self.T[i_band] = T;
-        self.R2[:, ib] = regression_estimator.R2;
+        self.TF[:,:, i_band] = regression_estimator.b.T #check dims are consitent
+        if regression_estimator.noise_covariance is not None:
+            self.Cov_NN[:,:, i_band] = regression_estimator.noise_covariance
+        if regression_estimator.inverse_signal_covariance is not None:
+            self.Cov_SS[:,:, i_band] = regression_estimator.inverse_signal_covariance
+        if regression_estimator.R2 is not None:
+            self.R2[:, ib] = regression_estimator.R2;
         self.num_segments[:self.num_channels_out, i_band] = regression_estimator.n_data
-
-    def set_tf_row(self,i_band, i_row, regression_estimator, T):
-        """
-        @GARY this TF object appears to be 4-dimensional, not 3D ...
-        This was going back and forth with Maxim and Gary and this stuff was
-        being used in the context of the Multiple Station program.
-
-        Perhaps consider using htis later.
-        This was notionally about fixing individual rows of the TF
-        like say you have a good channel and a bad channel at a station,
-        you can esimate at least part of the TF
-
-        Parameters
-        ----------
-        i_band
-        i_row
-        regression_estimator
-        T
-
-        Returns
-        -------
-
-        """
-        if not self.initialized:
-            print('Initialize TTrFunGeneral obect before calling setTF')
-            raise Exception
-        print("@Gary: What is up with this block here?")
-        #if nargin < 6:
-        #    iSite = 1;
-
-        n_data = regression_estimator.n_data  # use the class luke
-        #[nData, ~] = size(TRegObj.Y);
-        n, m = regression_estimator.b.shape
-
-        self.FullCov(ib, iSite) = 0;
-        if (n == self.num_channels_in) & (m == 1):
-            self.TF[i_row,:, i_band, iSite] = TRegObj.b
-            self.R2[ir, ib, iSite] = regression_estimator.R2
-            self.periods[ib, iSite] = T
-            self.num_segments[ir, ib, iSite] = n_data
-        else:
-            print('regression_estimator not proper size for operation in '
-                  'setTFRow')
-            raise Exception
         return
+
+    # def set_tf_row(self,i_band, i_row, regression_estimator, T):
+    #     """
+    #     @Gary this TF object appears to be 4-dimensional, not 3D ...
+    #     This was going back and forth with Maxim and Gary and this stuff was
+    #     being used in the context of the Multiple Station program.
+    #
+    #     Perhaps consider using this later.
+    #     This was notionally about fixing individual rows of the TF
+    #     like say you have a good channel and a bad channel at a station,
+    #     you can esimate at least part of the TF
+    #
+    #     Parameters
+    #     ----------
+    #     i_band
+    #     i_row
+    #     regression_estimator
+    #     T
+    #
+    #     Returns
+    #     -------
+    #
+    #     """
+    #     if not self.initialized:
+    #         print('Initialize TTrFunGeneral obect before calling setTF')
+    #         raise Exception
+    #     print("@Gary: What is up with this block here?")
+    #     #if nargin < 6:
+    #     #    iSite = 1;
+    #
+    #     n_data = regression_estimator.n_data  # use the class luke
+    #     #[nData, ~] = size(TRegObj.Y);
+    #     n, m = regression_estimator.b.shape
+    #
+    #     self.FullCov[ib, iSite] = 0;
+    #     if (n == self.num_channels_in) & (m == 1):
+    #         self.TF[i_row,:, i_band, iSite] = TRegObj.b
+    #         self.R2[ir, ib, iSite] = regression_estimator.R2
+    #         self.periods[ib, iSite] = T
+    #         self.num_segments[ir, ib, iSite] = n_data
+    #     else:
+    #         print('regression_estimator not proper size for operation in '
+    #               'setTFRow')
+    #         raise Exception
+    #     return
 
     def standard_error(self):
         stderr = np.zeros(self.TF.shape)
@@ -187,3 +207,16 @@ class TTF(object):
     def get_frequencies(self):
         return 1. / self.T
     #</TO BE DEPRECATED/MERGE WITH BandAveragingScheme>
+
+def test_ttf():
+    from iris_mt_scratch.sandbox.transfer_function.transfer_function_header \
+        import TransferFunctionHeader
+    tfh = TransferFunctionHeader()
+    ttf = TTF(tfh, 32)
+    ttf.set_tf(1,2,3)
+
+def main():
+    test_ttf()
+
+if __name__ == '__main__':
+    main()

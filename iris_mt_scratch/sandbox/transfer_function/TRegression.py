@@ -89,6 +89,7 @@ class RegressionEstimator(object):
         self.X = self.cast_data_to_2d_for_regression(self._X)
         self.Y = self.cast_data_to_2d_for_regression(self._Y)
         self.check_number_of_observations_xy_consistent()
+        self.R2 = None
 
     def cast_data_to_2d_for_regression(self, XY):
         """

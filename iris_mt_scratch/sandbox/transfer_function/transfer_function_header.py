@@ -117,7 +117,7 @@ class TransferFunctionHeader(object):
                 print('more than one vertical magnetic channel found for local '
                   'site')
                 #?raise Exception?
-            else
+            else:
                 self.ChOut = HZind + self.output_channels
 
         if SITES.RR:

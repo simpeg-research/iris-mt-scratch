@@ -125,6 +125,10 @@ class FrequencyBand(Interval):
     def center_frequency(self):
         return np.sqrt(self.lower_bound * self.upper_bound)
 
+    @property
+    def center_period(self):
+        return 1./self.center_frequency
+
 
 
 

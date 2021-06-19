@@ -38,9 +38,13 @@ from iris_mt_scratch.sandbox.time_series.mth5_helpers import get_experiment_from
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import HEXY
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import check_run_channels_have_expected_properties
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import embed_experiment_into_run
-
-
-
+from iris_mt_scratch.sandbox.transfer_function.TTF import TTF
+from iris_mt_scratch.sandbox.transfer_function.transfer_function_header \
+        import TransferFunctionHeader
+from iris_mt_scratch.sandbox.transfer_function.TTFZ import TTFZ
+from iris_mt_scratch.sandbox.transfer_function\
+            .transfer_function_driver import test_regression
+from iris_mt_scratch.sandbox.transfer_function.TRME import TRME
     
 def set_driver_parameters():
     driver_parameters = {}
@@ -102,7 +106,7 @@ def main():
         windowing_scheme = WindowingScheme(taper_family="hamming",
                                            num_samples_window=288000,
                                            num_samples_overlap=0,
-                                           sampling_rate=SAMPLING_RATE)
+                                           sampling_rate=40.0)
         windowed_obj = windowing_scheme.apply_sliding_window(pkd_mvts.dataset)
         tapered_obj = windowing_scheme.apply_taper(windowed_obj)
         
@@ -141,9 +145,21 @@ def main():
     print("ADD A FLAG TO THESE SO YOU KNOW IF TAPER IS APPLIED OR NOT")
 
     stft_obj = windowing_scheme.apply_fft(tapered_obj)#, pkd_mvts.sample_rate)
-    
     print("stft_obj", stft_obj)
+    #<CALIBRATE>
+
+    for channel_id in stft_obj.keys():
+        mth5_channel = run_obj.get_channel(channel_id)
+        channel_filter = mth5_channel.channel_response_filter
+        calibration_response = channel_filter.complex_response(stft_obj.frequency.data)
+
+        if channel_id[0].lower() =='e':
+            calibration_response *= 1e-6
+        stft_obj[channel_id].data /= calibration_response
+        print("multiply")
+    # <CALIBRATE>
     stft_obj_xrda = stft_obj.to_array("channel")
+
 
     frequencies = stft_obj.frequency.data[1:]
     print(f"Lower Bound:{frequencies[0]}, Upper bound:{frequencies[-1]}")
@@ -162,6 +178,11 @@ def main():
     # num_bands=8)
     #band_edges_2d = np.vstack((fenceposts[:-1], fenceposts[1:])).T
     #frequency_bands = FrequencyBands(band_edges=band_edges)
+    transfer_function_header = TransferFunctionHeader()
+    transfer_function_obj = TTFZ(transfer_function_header,
+                                 frequency_bands.number_of_bands)
+    #TODO: Make TTF take a FrequencyBands object, not num_bands
+
     for i_band in range(frequency_bands.number_of_bands):
         band = frequency_bands.band(i_band)
         band_da = extract_band(band, stft_obj_xrda)
@@ -170,11 +191,32 @@ def main():
             save_complex(band_da, TEST_BAND_FILE)
             band_da = read_complex(TEST_BAND_FILE)
 
-        from iris_mt_scratch.sandbox.transfer_function\
-            .transfer_function_driver import test_regression
-        Z = test_regression(band_da)
+        ###
+        band_dataset = band_da.to_dataset("channel")
+        X = band_dataset[["hx", "hy"]]
+        Y = band_dataset[["ex", "ey"]]
+        regression_estimator = TRME(X=X, Y=Y)
+        Z = regression_estimator.estimate()
+        ###
+        #Z = test_regression(band_da)
         print(f"elapsed {time.time()-t0}")
-        print("ready for TF")
+        T = band.center_period
+        #i_band, regression_estimator, T
+
+        transfer_function_obj.set_tf(i_band, regression_estimator, T)
+        print("Yay!")
+    print("OK")
+    transfer_function_obj.apparent_resistivity()
+    from iris_mt_scratch.sandbox.transfer_function.rho_plot import RhoPlot
+    plotter = RhoPlot(transfer_function_obj)
+    fig, axs = plt.subplots(nrows=2)
+    plotter.rho_sub_plot(axs[0])
+    plotter.phase_sub_plot(axs[1])
+    #plotter.rho_plot2()
+    #plotter.phase_plot()
+    plt.show()
+    print("OK")
+
 
 
 
