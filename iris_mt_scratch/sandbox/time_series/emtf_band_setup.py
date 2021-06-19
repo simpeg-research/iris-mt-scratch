@@ -20,7 +20,7 @@ class EMTFBandSetupFile():
     def load(self, filepath=None):
         if filepath is None:
             filepath = self.filepath
-        f = open(filepath, 'r')
+        f = open(str(filepath), 'r')
         n_bands = f.readline()
         self.n_bands = int(n_bands)
         f.close()
@@ -33,8 +33,15 @@ class EMTFBandSetupFile():
             raise Exception
         self.df = df
 
-    def get_decimation_level(self, decimation_level):
-        return self.df[self.df["decimation_level"]==decimation_level]
+    def get_decimation_level(self, decimation_level,
+                             order="ascending_frequency"):
+        if self.df is None:
+            self.load()
+        decimation_level_df = self.df[self.df["decimation_level"]==decimation_level]
+        if order=="ascending_frequency":
+            decimation_level_df = decimation_level_df.sort_values(by="lower_bound_index")
+
+        return decimation_level_df
 
     def to_band_averaging_scheme(self):
         """

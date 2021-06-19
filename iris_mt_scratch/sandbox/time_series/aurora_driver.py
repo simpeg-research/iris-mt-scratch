@@ -29,6 +29,7 @@ from iris_mt_scratch.general_helper_functions import read_complex, save_complex
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_array_list
 from iris_mt_scratch.sandbox.io_helpers.test_data import get_example_data
 from iris_mt_scratch.sandbox.io_helpers.test_data import TEST_DATA_SET_CONFIGS
+from iris_mt_scratch.sandbox.time_series.frequency_band import FrequencyBands
 from iris_mt_scratch.sandbox.time_series.frequency_band_helpers import extract_band
 from iris_mt_scratch.sandbox.time_series.frequency_band_helpers import frequency_band_edges
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import cast_run_to_run_ts
@@ -98,11 +99,10 @@ def main():
     #<PROCESS DATA>
         #<BULK SPECTRA CALIBRATION>
     if driver_parameters["BULK SPECTRA"]:
-
         windowing_scheme = WindowingScheme(taper_family="hamming",
                                            num_samples_window=288000,
                                            num_samples_overlap=0,
-                                           sampling_rate=40.0)
+                                           sampling_rate=SAMPLING_RATE)
         windowed_obj = windowing_scheme.apply_sliding_window(pkd_mvts.dataset)
         tapered_obj = windowing_scheme.apply_taper(windowed_obj)
         
@@ -121,12 +121,17 @@ def main():
 
 
         #<FC SERIES>
+    #<CONFIG>
+    SAMPLING_RATE = 40.0; print("NEED TO GET SAMPLING RATE FROM MTH5")
+    NUM_SAMPLES_WINDOW = 256
+    NUM_SAMPLES_OVERLAP = 192
+    #</CONFIG>
     filters_dict = experiment.surveys[0].filters
     #<DEFINE WINDOWING/TAPER PARAMETERS>
     windowing_scheme = WindowingScheme(taper_family="hamming",
-                                       num_samples_window=256,
-                                       num_samples_overlap=192,
-                                       sampling_rate=40.0)
+                                       num_samples_window=NUM_SAMPLES_WINDOW,
+                                       num_samples_overlap=NUM_SAMPLES_OVERLAP,
+                                       sampling_rate=SAMPLING_RATE)
     windowed_obj = windowing_scheme.apply_sliding_window(pkd_mvts.dataset)
 
     print("windowed_obj", windowed_obj)
@@ -145,18 +150,20 @@ def main():
     print("ITS TIME FOR BANDS")
     print("BY DEFUALT WE WILL USE A GATES AND FENCEPOSTS APPROACH")
     print("BUT FOR ZERO LEVEL DEV LETS USE AN EMTF FILE")
-    from frequency_bands import BandAveragingScheme
-    from iris_mt_scratch.sandbox.time_series.frequency_band import FrequencyBands
+    #from band_averaging_scheme import BandAveragingScheme
 
     emtf_band_setup_file = "bs_256.cfg"
-    #band_averaging_scheme = BandAveragingScheme(
-    # emtf_band_setup=emtf_band_setup_file)
-    # band_averaging_scheme = BandAveragingScheme(windowing_scheme.sampling_rate,
-    #                                             windowing_scheme.num_samples_window)
-    fenceposts = frequency_band_edges(frequencies[0], frequencies[-1], num_bands=8)
-    band_averaging_scheme = FrequencyBands(fence_posts=fenceposts)
-    for i_band in range(band_averaging_scheme.number_of_bands):
-        band = band_averaging_scheme.band(i_band)
+    frequency_bands = FrequencyBands()
+    frequency_bands.from_emtf_band_setup(filepath=emtf_band_setup_file,
+                                         sampling_rate=SAMPLING_RATE,
+                                         decimation_level=1,
+                                         num_samples_window=NUM_SAMPLES_WINDOW)
+    #fenceposts = frequency_band_edges(frequencies[0], frequencies[-1],
+    # num_bands=8)
+    #band_edges_2d = np.vstack((fenceposts[:-1], fenceposts[1:])).T
+    #frequency_bands = FrequencyBands(band_edges=band_edges)
+    for i_band in range(frequency_bands.number_of_bands):
+        band = frequency_bands.band(i_band)
         band_da = extract_band(band, stft_obj_xrda)
         save_band = False
         if save_band:
