@@ -19,7 +19,6 @@ import scipy.signal as ssig
 import time
 import xarray as xr
 
-t0 = time.time()
 from aurora.signal.windowing_scheme import WindowingScheme
 # from iris_mt_scratch.sandbox.time_series.multivariate_time_series import MultiVariateTimeSeries
 from iris_mt_scratch.general_helper_functions import DATA_DIR
@@ -45,7 +44,10 @@ from iris_mt_scratch.sandbox.transfer_function.TTFZ import TTFZ
 from iris_mt_scratch.sandbox.transfer_function\
             .transfer_function_driver import test_regression
 from iris_mt_scratch.sandbox.transfer_function.TRME import TRME
-    
+from iris_mt_scratch.sandbox.transfer_function.TRegression import RegressionEstimator
+
+
+
 def set_driver_parameters():
     driver_parameters = {}
     driver_parameters["run_ts_from_xml_01"] = 1#False #True
@@ -85,6 +87,7 @@ def main():
     -------
 
     """
+    t0 = time.time()
     driver_parameters = set_driver_parameters()
     dataset_id = driver_parameters["dataset_id"]
 
@@ -126,9 +129,25 @@ def main():
 
         #<FC SERIES>
     #<CONFIG>
+        # <AT EACH DECIMATION LEVEL>
     SAMPLING_RATE = 40.0; print("NEED TO GET SAMPLING RATE FROM MTH5")
     NUM_SAMPLES_WINDOW = 256
     NUM_SAMPLES_OVERLAP = 192
+    UNITS = "SI"
+    BAND_SETUP = "EMTF" #"logspace"
+    BAND_SETUP_FILE = "bs_256.cfg" #optional, only when BAND_SETUP=="EMTF"
+    #BAND_LOWER_BOUND = 0.1;       #optional, only when BAND_SETUP=="XXXX"
+    #BAND_UPPER_BOUND = 1.1;       #optional, only when BAND_SETUP=="XXXX"
+    #NUMBER_OF_BANDS = 8           #optional, only when BAND_SETUP=="XXXX"
+    #NUMBER_OF_BANDS_PER_DECADE = 8#optional, only when BAND_SETUP=="XXXX"
+    TF_LOCAL_SITE = "PKD      "    #This comes from mth5/mt_metadata aurora#18
+    TF_REMOTE_SITE = None #"SAO"   #This comes from mth5/mt_metadata aurora#18
+    TF_PROCESSING_SCHEME = "OLS" #"OLS",#required
+    TF_INPUT_CHANNELS = ["hx", "hy"]    #optional, default ["hx", "hy"]
+    TF_OUTPUT_CHANNELS = ["ex", "ey"]    #optional, default ["ex", "ey", "hz"]
+    TF_REFERENCE_CHANNELS = None   #optional, default ["hx", "hy"],
+    # </AT EACH DECIMATION LEVEL>
+    DECIMATIONS = [1,4,4,4]
     #</CONFIG>
     filters_dict = experiment.surveys[0].filters
     #<DEFINE WINDOWING/TAPER PARAMETERS>
@@ -153,53 +172,71 @@ def main():
         channel_filter = mth5_channel.channel_response_filter
         calibration_response = channel_filter.complex_response(stft_obj.frequency.data)
 
-        if channel_id[0].lower() =='e':
-            calibration_response *= 1e-6
+        if UNITS=="SI":
+            if channel_id[0].lower() =='h':
+                calibration_response /= 1e-9 #SI Units
         stft_obj[channel_id].data /= calibration_response
         print("multiply")
     # <CALIBRATE>
+
     stft_obj_xrda = stft_obj.to_array("channel")
-
-
     frequencies = stft_obj.frequency.data[1:]
-    print(f"Lower Bound:{frequencies[0]}, Upper bound:{frequencies[-1]}")
-    print("ITS TIME FOR BANDS")
-    print("BY DEFUALT WE WILL USE A GATES AND FENCEPOSTS APPROACH")
-    print("BUT FOR ZERO LEVEL DEV LETS USE AN EMTF FILE")
-    #from band_averaging_scheme import BandAveragingScheme
+    #print(f"Lower Bound:{frequencies[0]}, Upper bound:{frequencies[-1]}")
 
-    emtf_band_setup_file = "bs_256.cfg"
     frequency_bands = FrequencyBands()
-    frequency_bands.from_emtf_band_setup(filepath=emtf_band_setup_file,
+    if BAND_SETUP=="EMTF":
+        frequency_bands.from_emtf_band_setup(filepath=BAND_SETUP_FILE,
                                          sampling_rate=SAMPLING_RATE,
                                          decimation_level=1,
                                          num_samples_window=NUM_SAMPLES_WINDOW)
-    #fenceposts = frequency_band_edges(frequencies[0], frequencies[-1],
-    # num_bands=8)
-    #band_edges_2d = np.vstack((fenceposts[:-1], fenceposts[1:])).T
-    #frequency_bands = FrequencyBands(band_edges=band_edges)
-    transfer_function_header = TransferFunctionHeader()
+    elif BAND_SETUP=="XXXX":
+        print("TODO:Write a method to choose lower and upper bounds, "
+              "and number of bands to split it into")
+        band_edges = frequency_band_edges(frequencies[1],
+                                          frequencies[-1],
+                                          num_bands=8)
+        band_edges_2d = np.vstack((band_edges[:-1], band_edges[1:])).T
+        frequency_bands = FrequencyBands(band_edges=band_edges)
+
+    transfer_function_header = TransferFunctionHeader(
+        processing_scheme=TF_PROCESSING_SCHEME,
+        local_site=TF_LOCAL_SITE,
+        remote_site=TF_REMOTE_SITE,
+        input_channels=TF_INPUT_CHANNELS,
+        output_channels=TF_OUTPUT_CHANNELS,
+        reference_channels=TF_REFERENCE_CHANNELS)
     transfer_function_obj = TTFZ(transfer_function_header,
                                  frequency_bands.number_of_bands)
     #TODO: Make TTF take a FrequencyBands object, not num_bands
 
     for i_band in range(frequency_bands.number_of_bands):
         band = frequency_bands.band(i_band)
-        band_da = extract_band(band, stft_obj_xrda)
+        band_dataarray = extract_band(band, stft_obj_xrda)
         save_band = False
         if save_band:
             save_complex(band_da, TEST_BAND_FILE)
             band_da = read_complex(TEST_BAND_FILE)
 
         ###
-        band_dataset = band_da.to_dataset("channel")
-        X = band_dataset[["hx", "hy"]]
-        Y = band_dataset[["ex", "ey"]]
-        regression_estimator = TRME(X=X, Y=Y)
-        Z = regression_estimator.estimate()
+        band_dataset = band_dataarray.to_dataset("channel")
+        X = band_dataset[TF_INPUT_CHANNELS]
+        Y = band_dataset[TF_OUTPUT_CHANNELS]
+        if TF_PROCESSING_SCHEME=="OLS":
+            regression_estimator = RegressionEstimator(X=X, Y=Y)
+            Z = regression_estimator.estimate_ols()
+        elif TF_PROCESSING_SCHEME=="RME":
+            regression_estimator = TRME(X=X, Y=Y)
+            Z = regression_estimator.estimate()
+        else:
+            print(f"processing_scheme {TF_PROCESSING_SCHEME} not supported")
+            print(f"processing_scheme must be one of OLS, RME "
+                  f"not supported")
+            raise Exception
+
         ###
         #Z = test_regression(band_da)
         print(f"elapsed {time.time()-t0}")
+        print(f"Z \n {Z}")
         T = band.center_period
         #i_band, regression_estimator, T
 

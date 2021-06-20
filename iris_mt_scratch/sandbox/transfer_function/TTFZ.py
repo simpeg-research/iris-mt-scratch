@@ -56,8 +56,10 @@ class TTFZ(TTF):
         Zyx_se = self.standard_error()[zRows[1], 0,:].squeeze() / np.sqrt(2)
 
         # apparent resistivities
-        rxy = self.T * (abs(Zxy) ** 2) / 5.
-        ryx = self.T * (abs(Zyx) ** 2) / 5.
+        #rxy = self.T * (abs(Zxy) ** 2) / 5.
+        #ryx = self.T * (abs(Zyx) ** 2) / 5.
+        rxy = 2e-7 * self.T * (abs(Zxy) ** 2)
+        ryx = 2e-7*  self.T * (abs(Zyx) ** 2)
 
         rxy_se = 2 * np.sqrt(self.T * rxy / 5) * Zxy_se
         ryx_se = 2 * np.sqrt(self.T * ryx / 5) * Zyx_se

@@ -47,16 +47,26 @@ class TransferFunctionHeader(object):
     def num_output_channels(self):
         return len(self.output_channels)
 
-
+    #TO BE DEPRECATED
     def array_header_to_tf_header(self, array_header, sites):
         """
         This will likely be made from MTH5.  The overarching point of this
-        Methods is to review the available processing choices available.
+        method is to
+        1. associated the right station header with the local site
+        2. populate the input and output channels,
+        3. populate the remote channels
+
+        Notes that the population of input and output channels is done
+        based on data_availability and basically can be done at the
+        config level
+
+        This entire method can probably be replaced with a proper config, and
+        a processing_config_validation
+
 
         Looks like SITES are basically keys to array_header which is basically
         a dict of station_headers.
 
-        This may need a github issue to track its development
         It looks like this assigns the processing_scheme
         %   Usage: obj = ArrayHeader2TFHeader(obj,ArrayHD, OPTIONS)
             %        given an input TArrayHeader,

@@ -132,10 +132,6 @@ class RegressionEstimator(object):
             output_array[:, i_ch] = XY[key].data.ravel()
         return output_array
     
-    # def ravel_XY(self):
-    #     X = self.X.to_dataset("channel")
-    #     hx = X["hx"].data.ravel()
-    #     hy = X["hy"].data.ravel()
 
 
     def estimate_ols(self):
@@ -147,6 +143,7 @@ class RegressionEstimator(object):
         Z = np.matmul(EH, XTX_inv)
         # bW = np.linalg.solve(WTW,
         #                      np.dot(W.T, yy))  # bW = np.matmul(WWW, yy[i_freq])
+        self.b = Z
         return Z
 
     def estimate(self):
