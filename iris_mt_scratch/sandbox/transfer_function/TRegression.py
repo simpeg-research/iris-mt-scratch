@@ -134,17 +134,50 @@ class RegressionEstimator(object):
     
 
 
-    def estimate_ols(self):
+    def estimate_ols(self, mode="solve"):
+        """
+
+        Parameters
+        ----------
+        mode : str
+            "qr", "brute_force", "solve"
+
+        Returns
+        -------
+        b : numpy array
+            Normally the impedance tensor Z
+
+        Solve Y = Xb
+
+        Brute Force tends to be less stable because we actually compute the
+        inverse matrix.  It is not recommended, its just here for completeness.
+        X'Y=X'Xb
+        (X'X)^-1 X'Y = b
+
+        -------
+
+        """
         X = self.X
         Y = self.Y
-        XTX = np.matmul(X.T, np.conj(X))
-        XTX_inv = np.linalg.inv(XTX)
-        EH = np.matmul(Y.T, np.conj(X))
-        Z = np.matmul(EH, XTX_inv)
-        # bW = np.linalg.solve(WTW,
-        #                      np.dot(W.T, yy))  # bW = np.matmul(WWW, yy[i_freq])
-        self.b = Z
-        return Z
+        if mode.lower()=="qr":
+            from scipy.linalg import solve_triangular
+            Q, R = np.linalg.qr(X, mode='economic')
+            b = solve_triangular(R, np.conj(Q.T) @ Y)
+        else:
+            XH = np.conj(X.T)
+            XHX = np.matmul(XH, X)
+            XHY = np.matmul(XH, Y)
+            if mode.lower()=="brute_force":
+                XHX_inv = np.linalg.inv(XHX)
+                b = np.matmul(XHX_inv, XHY)
+            elif mode.lower()=="solve":
+                b = np.linalg.solve(XHX, XHY)
+            else:
+                print(f"mode {mode} not recognized")
+                raise Exception
+        self.b = b
+        return b
+
 
     def estimate(self):
         print("this method is not defined for the abstract base class")

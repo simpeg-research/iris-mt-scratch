@@ -37,14 +37,16 @@ from iris_mt_scratch.sandbox.time_series.mth5_helpers import get_experiment_from
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import HEXY
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import check_run_channels_have_expected_properties
 from iris_mt_scratch.sandbox.time_series.mth5_helpers import embed_experiment_into_run
-from iris_mt_scratch.sandbox.transfer_function.TTF import TTF
+from iris_mt_scratch.sandbox.transfer_function.iter_control import IterControl
 from iris_mt_scratch.sandbox.transfer_function.transfer_function_header \
         import TransferFunctionHeader
+from iris_mt_scratch.sandbox.transfer_function.TTF import TTF
 from iris_mt_scratch.sandbox.transfer_function.TTFZ import TTFZ
 from iris_mt_scratch.sandbox.transfer_function\
             .transfer_function_driver import test_regression
 from iris_mt_scratch.sandbox.transfer_function.TRME import TRME
 from iris_mt_scratch.sandbox.transfer_function.TRegression import RegressionEstimator
+
 
 
 
@@ -142,11 +144,13 @@ def main():
     #NUMBER_OF_BANDS_PER_DECADE = 8#optional, only when BAND_SETUP=="XXXX"
     TF_LOCAL_SITE = "PKD      "    #This comes from mth5/mt_metadata aurora#18
     TF_REMOTE_SITE = None #"SAO"   #This comes from mth5/mt_metadata aurora#18
-    TF_PROCESSING_SCHEME = "OLS" #"OLS",#required
+    TF_PROCESSING_SCHEME = "OLS"#""RME" #"OLS","RME", #required
     TF_INPUT_CHANNELS = ["hx", "hy"]    #optional, default ["hx", "hy"]
     TF_OUTPUT_CHANNELS = ["ex", "ey"]    #optional, default ["ex", "ey", "hz"]
     TF_REFERENCE_CHANNELS = None   #optional, default ["hx", "hy"],
-    # </AT EACH DECIMATION LEVEL>
+
+    MAX_NUMBER_OF_ITERATIONS = 0
+    # </AT EACH DEIMATION LEVEL>
     DECIMATIONS = [1,4,4,4]
     #</CONFIG>
     filters_dict = experiment.surveys[0].filters
@@ -224,9 +228,12 @@ def main():
         if TF_PROCESSING_SCHEME=="OLS":
             regression_estimator = RegressionEstimator(X=X, Y=Y)
             Z = regression_estimator.estimate_ols()
-        elif TF_PROCESSING_SCHEME=="RME":
-            regression_estimator = TRME(X=X, Y=Y)
+            print(f"{TF_PROCESSING_SCHEME}, \n {Z}")
+        #elif TF_PROCESSING_SCHEME=="RME":
+            iter_control = IterControl(max_number_of_iterations=MAX_NUMBER_OF_ITERATIONS)
+            regression_estimator = TRME(X=X, Y=Y, iter_control=iter_control)
             Z = regression_estimator.estimate()
+            print(f"RME{TF_PROCESSING_SCHEME}, \n {Z}")
         else:
             print(f"processing_scheme {TF_PROCESSING_SCHEME} not supported")
             print(f"processing_scheme must be one of OLS, RME "
@@ -236,7 +243,7 @@ def main():
         ###
         #Z = test_regression(band_da)
         print(f"elapsed {time.time()-t0}")
-        print(f"Z \n {Z}")
+        #print(f"Z \n {Z}")
         T = band.center_period
         #i_band, regression_estimator, T
 

@@ -14,15 +14,24 @@ class IterControl(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, max_number_of_iterations=10, **kwargs):
         """
 
+        Parameters
+        ----------
+        max_number_of_iterations: int
+            Set to zero for OLS, otherwise, this is how many times the RME
+            will refine the estimate.
+        kwargs
         """
+        print("TEST")
+        qq = kwargs.get("test")
+        print(f"qq {qq}")
         self._number_of_iterations = 0; #private variable, wont show up in
                                         #tab completion.
                                         #Internal to codebase and should not
                                         #be relied upon in functons by users.
-        self.max_number_of_iterations = 10; #0 for OLS
+        self.max_number_of_iterations = max_number_of_iterations
         self.tolerance = 0.005
         self.epsilon = 1000
 

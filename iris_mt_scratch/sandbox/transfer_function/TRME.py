@@ -213,6 +213,8 @@ class TRME(RegressionEstimator):
                 raise Exception
         return Q, R
 
+
+
     def estimate(self):
         """
         function that does the actual regression - M estimate
@@ -237,8 +239,7 @@ class TRME(RegressionEstimator):
         QHY = np.matmul(np.conj(Q.T), self.Y)
         b0 = solve_triangular(R, QHY)
 
-        sigma = self.sigma(QHY, self.Y)
-        #array([2049740.38627989, 228567.81051429])
+
         if self.iter_control.max_number_of_iterations > 0:
             converged = False;
             #cfac = self.iter_control.correction_factor
@@ -249,6 +250,7 @@ class TRME(RegressionEstimator):
             self.b = b0;
             self.Yc = self.Y;
 
+        sigma = self.sigma(QHY, self.Y)
         self.iter_control.number_of_iterations = 0;
 
         while not converged:
