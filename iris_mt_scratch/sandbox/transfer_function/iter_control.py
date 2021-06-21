@@ -78,6 +78,9 @@ class IterControl(object):
         Returns
         -------
 
+        TODO: The logic conditions are "True" for not converged.
+        THis would be mor readable if the conditions were true when convergence
+        occurs
         """
 
         converged = False
@@ -90,6 +93,7 @@ class IterControl(object):
             converged = False
         else:
             converged = True
+
 
         return converged
 
@@ -112,14 +116,16 @@ class IterControl(object):
         approach (Yc) sigma is smaller than it should be, you need to
         compensate for this by using a correction_factor. It's basically the
         expectation, if the data really were Gaussian, and you estimated from
-        the corrected data. This is how much too small the estiamte would be.
+        the corrected data. This is how much too small the estimate would be.
 
         If you change the penalty functional you may need a pencil, paper and
         some calculus.  The relationship between the corrected-data-residuals
         and the gaussin residauls could change if you change the penalty
-        Returns float
-        -------
 
+        Returns
+        -------
+        cfac : float
+            correction factor used when
         """
         cfac = 1. / (2 * (1. - (1. + self.r0) * np.exp(-self.r0)))
         return cfac

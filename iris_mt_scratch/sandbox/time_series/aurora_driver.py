@@ -149,7 +149,7 @@ def main():
     TF_OUTPUT_CHANNELS = ["ex", "ey"]    #optional, default ["ex", "ey", "hz"]
     TF_REFERENCE_CHANNELS = None   #optional, default ["hx", "hy"],
 
-    MAX_NUMBER_OF_ITERATIONS = 0
+    MAX_NUMBER_OF_ITERATIONS = 10
     # </AT EACH DEIMATION LEVEL>
     DECIMATIONS = [1,4,4,4]
     #</CONFIG>

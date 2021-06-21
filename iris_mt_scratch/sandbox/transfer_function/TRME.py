@@ -103,21 +103,24 @@ class TRME(RegressionEstimator):
         return self.iter_control.correction_factor
 
 
-    def sigma(self, QHY, Y_or_Yc, cfac=1):
+    def sigma(self, QHY, Y_or_Yc, correction_factor=1.0):
         """
-        QHY[i,j] = Q.H * Y[i,j] = <Q[:,i], Y[:,j]>
-        So when we sum columns of norm(QHY) we are get in the zeroth position
-        <Q[:,0], Y[:,0]> +  <Q[:,1], Y[:,0]>, that is the 0th channel of Y
-        projected onto each of the Q-basis vectors
+        Computes the squared norms difference of the output channels from the
+        "output channels inner-product with Q"
 
-
-        Computes the difference in the norm of the output channels
-        and the output channels inner-product with Q
         Parameters
         ----------
-        QHY
-        Y_or_Yc
-        cfac
+        QHY : numpy array
+            QHY[i,j] = Q.H * Y[i,j] = <Q[:,i], Y[:,j]>
+            So when we sum columns of norm(QHY) we are get in the zeroth position
+            <Q[:,0], Y[:,0]> +  <Q[:,1], Y[:,0]>, that is the 0th channel of Y
+            projected onto each of the Q-basis vectors
+        Y_or_Yc : numpy array
+            The output channels (self.Y) or the cleaned output channels self.Yc
+        correction_factor : float
+            See doc in IterControl.correction_factor
+
+        #<PUT THIS SOMEWHERE RELEVANT>
         Y2 is the norm sqaured of the data, and
         QQHY is the projected (and predicted) data...
         The predicted data has to lie in span of the columns in the
@@ -128,14 +131,16 @@ class TRME(RegressionEstimator):
         So the predicted data is Q*QH*X
         Write it out by hand and you'll see it.
         The norms of QQHY  and the length of QHY are the same
+        #</PUT THIS SOMEWHERE RELEVANT>
 
         Returns
         -------
+        sigma : numpy array
 
         """
         Y2 = np.linalg.norm(Y_or_Yc, axis=0)**2
         QHY2 = np.linalg.norm(QHY, axis=0)**2
-        sigma = cfac * (Y2 - QHY2) / self.n_data;
+        sigma = correction_factor * (Y2 - QHY2) / self.n_data;
         return sigma
 
     def solve_overdetermined(self):
@@ -170,7 +175,20 @@ class TRME(RegressionEstimator):
 
     def huber_weights(self, sigma, YP):
         """
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+        Parameters
+        ----------
+        sigma : numpy array
+            1D array, the same length as the number of output channels
+            see self.sigma() method for its calculation
+        YP : numpy array
+            The predicted data, usually from QQHY
+
+        Returns
+        -------
+
+        """
+        """
         function [YC,E_psiPrime] = HuberWt(Y,YP,sig,r0)
 
         inputs are data (Y) and predicted (YP), estiamted
@@ -191,16 +209,15 @@ class TRME(RegressionEstimator):
         So the expectiaon value of psi' is the number of points outside
         its the number of points that didnt get weighted /total number of points
         """
-        K = self.n_channels_out
-        YC = self.Y.copy() #may need copy here to leave Y as it is ... maybe not
+        Y_cleaned = np.zeros(self.Y.shape, dtype=np.complex128)
         E_psiPrime = np.zeros((self.n_channels_out,1))
         for k in range(self.n_channels_out):
             r0s = self.r0 * np.sqrt(sigma[k])
             residuals = np.abs(self.Y[:, k] - YP[:, k])
             w = np.minimum(r0s/residuals, 1.0)
-            YC[:, k] = w * self.Y[:, k] + (1 - w) * YP[:, k]
+            Y_cleaned[:, k] = w * self.Y[:, k] + (1 - w) * YP[:, k]
             E_psiPrime[k] = 1.0 * np.sum(w == 1) / self.n_data;
-        self.Yc = YC
+        self.Yc = Y_cleaned
         return E_psiPrime
 
     def qr_decomposition(self, X, sanity_check=False):
@@ -234,15 +251,14 @@ class TRME(RegressionEstimator):
             return b0
 
         Q, R = self.qr_decomposition(self.X)
-
+        QH = np.conjugate(np.transpose(Q))
         # initial LS estimate b0, error variances sigma
-        QHY = np.matmul(np.conj(Q.T), self.Y)
+        QHY = np.matmul(QH, self.Y)
         b0 = solve_triangular(R, QHY)
 
 
         if self.iter_control.max_number_of_iterations > 0:
             converged = False;
-            #cfac = self.iter_control.correction_factor
         else:
             converged = True
             E_psiPrime = 1;
@@ -255,20 +271,17 @@ class TRME(RegressionEstimator):
 
         while not converged:
             self.iter_control.number_of_iterations += 1
-            YP = np.matmul(Q, QHY) # predicted data
+            YP = np.matmul(Q, QHY) # predicted data, looks like its just Y though
             E_psiPrime = self.huber_weights(sigma, YP)
-            #HuberWt(Y, YP, sig, r0)
-            # cleaned data
-            #updated error variance estimates, computed using cleaned data
-            #
-            print("WARNING CHECK IF Q.T should be np.conj(Q.T), i.e. QH")
-            QHYc = np.matmul(Q.T, self.Yc)
-            #anyways, here we are halfways projecting the Cleaned data
-            #this varaiable is the analog to QHY
+            QHYc = np.matmul(QH, self.Yc)
             self.b = solve_triangular(R, QHYc) #self.b = R\QTY;
-            sigma = self.sigma(QHYc, self.Yc, cfac=self.correction_factor)
+
+            #update error variance estimates, computed using cleaned data
+            sigma = self.sigma(QHYc, self.Yc,
+                               correction_factor=self.correction_factor)
             converged = self.iter_control.converged(self.b, b0);
             b0 = self.b;
+
 
         if self.iter_control.redescend:
             self.iter_control.number_of_redescending_iterations = 0;
