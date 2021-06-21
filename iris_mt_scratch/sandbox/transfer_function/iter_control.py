@@ -86,13 +86,26 @@ class IterControl(object):
         converged = False
         b *= 1.0 #float
         maximum_change = np.max(np.abs(1 - b/b0))
-        cond1 = maximum_change > self.tolerance
-        cond2 = self.number_of_iterations < self.max_number_of_iterations
-
-        if cond1 & cond2:
-            converged = False
-        else:
+        tolerance_cond = maximum_change <= self.tolerance
+        iteration_cond = self.number_of_iterations >= self.max_number_of_iterations
+        if tolerance_cond or iteration_cond:
             converged = True
+            if tolerance_cond:
+                print(f"Converged Due to MaxChange < Tolerance after "
+                      f" {self.number_of_iterations} of "
+                      f" {self.max_number_of_iterations} iterations")
+            elif iteration_cond:
+                print(f"Converged Due to maximum number_of_iterations "
+                      f" {self.max_number_of_iterations}")
+        else:
+            converged = False
+        #cond1 = maximum_change > self.tolerance
+        #cond2 = self.number_of_iterations < self.max_number_of_iterations
+
+        #if cond1 & cond2:
+        #    converged = False
+        #else:
+        #    converged = True
 
 
         return converged
