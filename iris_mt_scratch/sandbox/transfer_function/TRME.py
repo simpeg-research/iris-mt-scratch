@@ -341,35 +341,22 @@ class TRME(RegressionEstimator):
             self.expectation_psi_prime = 2 * self.expectation_psi_prime - 1
 
         result = self.b;
-        return self.b
+
         if self.iter_control.return_covariance:
             # compute error covariance matrices
-            self.Cov_SS = np.linalg.inv(np.matmul(R.conj().T,R));
+            self.inverse_signal_covariance= np.linalg.inv(np.matmul(R.conj().T,R));
 
-            res = obj.Yc - YP;
-            # need to look at how we should compute adjusted residual cov to
-            # make consistent with tranmt
-            SSRC = np.conj(np.matmul(res.conj().T, res));
-            #SSRC = conj(res'*res);
-            res = obj.Y-YP;
-            print("MATMUL")
-            print("MATMUL")
-            SSR = np.conj(np.matmul(res.T, res));
-            #SSR = conj(res'*res);
-
-            # SSY = real(sum(obj.Y.* conj(obj.Y), 1));
-            #SSYC = real(sum(obj.Yc. * conj(obj.Yc), 1)); #ORIGINAL
-            print("UGH")
-            print("UGH")
-            SSYC = real(sum(obj.Yc * np.conj(obj.Yc), 1));
-            #obj.Cov_NN = diag(1. / (E_psiPrime. ^ 2)) * SSRC / (nData - nParam);#original
-            obj.Cov_NN = diag(1. / (E_psiPrime**2)) * SSRC / (nData-nParam);
-            print("UGH")
-            print("UGH")
-            #obj.R2 = 1-diag(real(SSR))'./SSYC;
-            print("UGH")
-            print("UGH")
-            #obj.R2(obj.R2 < 0) = 0;
+            res_clean = self.Yc - YP;
+            SSR_clean = np.conj(res_clean.conj().T @ res_clean);
+            res = self.Y-YP;
+            SSR = np.conj(np.matmul(res.conj().T, res));
+            Yc2 = np.abs(self.Yc)**2
+            SSYC = np.sum(Yc2, axis=0);
+            inv_psi_prime2 = np.diag(1. / (self.expectation_psi_prime**2))
+            degrees_of_freedom = self.n_data-self.n_param
+            self.noise_covariance = inv_psi_prime2 @ SSR_clean / degrees_of_freedom
+            self.R2 = 1-np.diag(np.real(SSR)).T / SSYC
+            self.R2[self.R2 < 0] = 0
         return self.b
             
             

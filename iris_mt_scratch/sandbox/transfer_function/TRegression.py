@@ -194,6 +194,7 @@ class RegressionEstimator(object):
     def n_data(self):
         return self.X.shape[0]
 
+    #REPLACE WITH n_channels_in
     @property
     def n_param(self):
         return self.X.shape[1]

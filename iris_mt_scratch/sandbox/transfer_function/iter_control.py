@@ -59,7 +59,7 @@ class IterControl(object):
 
         #<Additional properties>
         # #sed sometimes to control one or another of the iterative algorithms
-        self.return_covariance = False
+        self.return_covariance = True
         self.save_cleaned = False
         self.robust_diagonalize = False
         # </Additional properties>

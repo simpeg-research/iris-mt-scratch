@@ -144,7 +144,7 @@ class TTF(object):
         if regression_estimator.inverse_signal_covariance is not None:
             self.Cov_SS[:,:, i_band] = regression_estimator.inverse_signal_covariance
         if regression_estimator.R2 is not None:
-            self.R2[:, ib] = regression_estimator.R2;
+            self.R2[:, i_band] = regression_estimator.R2;
         self.num_segments[:self.num_channels_out, i_band] = regression_estimator.n_data
         return
 
