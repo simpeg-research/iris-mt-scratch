@@ -75,7 +75,29 @@ from iris_mt_scratch.sandbox.transfer_function.TRegression import \
 class TRME(RegressionEstimator):
 
     def __init__(self, **kwargs):
+        """
+
+        Parameters
+        ----------
+        kwargs
+        expectation_psi_prime : numpy array
+            Expectation value of psi' (derivative of psi) -- ?? OR rho'=psi????
+            same number of entries as there are output channels
+            default to 1.0
+            Recall start with the loss function rho. The derivative of the
+            loss function is the "influence function" psi.
+            Think about the Huber loss function (quadratic out to r0,
+            after which it is linear). Psi is -1 until you get to -r0,
+            then it increases linearly to 1 (r0)
+            Psi' is something like 1 between -r0, and r0
+            Psi' is zero outside
+            So the expectiaon value of psi' is the number of points outside
+            its the number of points that didnt get weighted /total number of points
+
+        """
         super(TRME, self).__init__(**kwargs)
+        self.expectation_psi_prime = np.ones(self.n_channels_out)
+        self.sigma_squared = np.zeros(self.n_channels_out)
 
 
     @property
@@ -108,6 +130,10 @@ class TRME(RegressionEstimator):
         Computes the squared norms difference of the output channels from the
         "output channels inner-product with Q"
 
+        This seems like it is more like sigma^2 than sigma.  i.e. it is a
+        variance.  Especially in the context or the redecnd using it's sqrt to
+        normalize the residual amplitudes
+
         Parameters
         ----------
         QHY : numpy array
@@ -138,7 +164,7 @@ class TRME(RegressionEstimator):
         sigma : numpy array
 
         """
-        Y2 = np.linalg.norm(Y_or_Yc, axis=0)**2
+        Y2 = np.linalg.norm(Y_or_Yc, axis=0)**2 #variance?
         QHY2 = np.linalg.norm(QHY, axis=0)**2
         sigma = correction_factor * (Y2 - QHY2) / self.n_data;
         return sigma
@@ -173,7 +199,7 @@ class TRME(RegressionEstimator):
 
         return self.b
 
-    def huber_weights(self, sigma, YP):
+    def apply_huber_weights(self, sigma, YP):
         """
 
         Parameters
@@ -186,6 +212,7 @@ class TRME(RegressionEstimator):
 
         Returns
         -------
+        Updates the values of self.Yc and self.expectation_psi_prime
 
         """
         """
@@ -195,30 +222,16 @@ class TRME(RegressionEstimator):
         error variances (for each column) and Huber parameter r0
         allows for multiple columns of data
 
-        E_psiPrime : Expectation value of psi'
-        recall start with the loss function rho
-        The derivative of the loss function rho is psi
-        (psi is called the influence function)
-
-        Think about the huber loss function (quadratic out to r0, after
-        which it is linear).
-        Psi is -1 until you get to -r0, then it increases linearly
-        to 1 (r0)
-        Psi' is something like 1 between -r0, and r0
-        Psi' is zero outside
-        So the expectiaon value of psi' is the number of points outside
-        its the number of points that didnt get weighted /total number of points
+        
         """
-        Y_cleaned = np.zeros(self.Y.shape, dtype=np.complex128)
-        E_psiPrime = np.zeros((self.n_channels_out,1))
+        #Y_cleaned = np.zeros(self.Y.shape, dtype=np.complex128)
         for k in range(self.n_channels_out):
             r0s = self.r0 * np.sqrt(sigma[k])
             residuals = np.abs(self.Y[:, k] - YP[:, k])
             w = np.minimum(r0s/residuals, 1.0)
-            Y_cleaned[:, k] = w * self.Y[:, k] + (1 - w) * YP[:, k]
-            E_psiPrime[k] = 1.0 * np.sum(w == 1) / self.n_data;
-        self.Yc = Y_cleaned
-        return E_psiPrime
+            self.Yc[:, k] = w * self.Y[:, k] + (1 - w) * YP[:, k]
+            self.expectation_psi_prime[k] = 1.0 * np.sum(w == 1) / self.n_data;
+        return
 
     def qr_decomposition(self, X, sanity_check=False):
         [Q, R] = np.linalg.qr(X)
@@ -230,7 +243,35 @@ class TRME(RegressionEstimator):
                 raise Exception
         return Q, R
 
+    def redescend(self, Y_predicted, sigma, ):
+        """
+        % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+        function[YC, E_psiPrime] = RedescendWt(Y, YP, sig, u0)
 
+        % inputs
+        are
+        data(Y) and predicted(YP), estiamted
+        % error
+        variances(
+        for each column) and Huber parameter u0
+        % allows
+        for multiple columns of data
+        """
+        #Y_cleaned = np.zeros(self.Y.shape, dtype=np.complex128)
+        for k in range(self.n_channels_out):
+
+            r = np.abs(Y[:, k] - Y_predicted[:, k]) / np.sqrt(sigma[k])
+            t = -np.exp(self.u0 * (r - u0))
+            w = np.exp(t)
+
+            # cleaned data
+            self.Yc[:, k] = w * Y[:, k] + (1 - w) * Y_predicted[:, k]
+
+            # computation of E(psi')
+            t = u0 * (t * r)
+            t = w * (1 + t)
+            self.expectation_psi_prime[k] = np.sum(t[t>0]) / self.n_data
+        return
 
     def estimate(self):
         """
@@ -261,7 +302,8 @@ class TRME(RegressionEstimator):
             converged = False;
         else:
             converged = True
-            E_psiPrime = 1;
+            self.expectation_psi_prime = np.ones(self.n_channels_out) #let
+            # this be defualt
             YP = np.matmul(Q, QHY);#not sure we need this?
             self.b = b0;
             self.Yc = self.Y;
@@ -271,8 +313,8 @@ class TRME(RegressionEstimator):
 
         while not converged:
             self.iter_control.number_of_iterations += 1
-            YP = np.matmul(Q, QHY) # predicted data, looks like its just Y though
-            E_psiPrime = self.huber_weights(sigma, YP)
+            YP = np.matmul(Q, QHY) # predicted data,
+            self.apply_huber_weights(sigma, YP)
             QHYc = np.matmul(QH, self.Yc)
             self.b = solve_triangular(R, QHYc) #self.b = R\QTY;
 
@@ -282,42 +324,32 @@ class TRME(RegressionEstimator):
             converged = self.iter_control.converged(self.b, b0);
             b0 = self.b;
 
-
-        if self.iter_control.redescend:
-            self.iter_control.number_of_redescending_iterations = 0;
-            while self.iter_control.number_of_redescending_iterations <= \
-                    self.iter_control.maximum_number_of_redescending_iterations:
-                self.iter_control.number_of_redescending_iterations += 1
-                # one obj with redescending influence curve
-                YP = np.matmul(Q, QHYc)
-                # cleaned data
-                [self.Yc, E_psiPrime] = RedescendWt(self.Y, YP, sigma, ITER.u0);
+        if self.iter_control.max_number_of_redescending_iterations:
+            print(b0)
+            #self.iter_control.number_of_redescending_iterations = 0;
+            while self.iter_control.continue_redescending:
+                self.iter_control._number_of_redescending_iterations += 1
+                #add setter here
+                YP = np.matmul(Q, QHYc) # predict from cleaned data
+                self.redescend(YP, sigma) #update cleaned data, and expectation
                 # updated error variance estimates, computed using cleaned data
-                QTY = np.matmul(Q.T, self.Yc)
-                print("MLDIVIDE")
-                print("MLDIVIDE")
-                #self.b = R\QTY;
-                sigma = self.sigma(QTY, self.Yc)
-                #sigma = (sum(obj.Yc. * conj(obj.Yc), 1) - sum(QTY. * conj(QTY),
-                #                                      1)) / nData;
+                QHYc = np.matmul(QH, self.Yc)
+                self.b = solve_triangular(R, QHYc)
+                sigma = self.sigma(QHYc, self.Yc)
             # crude estimate of expectation of psi ... accounting for
             # redescending influence curve
-            E_psiPrime = 2 * E_psiPrime - 1;
+            self.expectation_psi_prime = 2 * self.expectation_psi_prime - 1
 
         result = self.b;
         return self.b
         if self.iter_control.return_covariance:
             # compute error covariance matrices
-            print("INVINV")
-            print("INVINV")
-            self.Cov_SS = np.linalg.inv(np.matmul(R.T,R));
-            #self.Cov_SS = inv(R'*R);
+            self.Cov_SS = np.linalg.inv(np.matmul(R.conj().T,R));
+
             res = obj.Yc - YP;
             # need to look at how we should compute adjusted residual cov to
             # make consistent with tranmt
-            print("MATMUL")
-            print("MATMUL")
-            SSRC = np.conj(np.matmul(res.T, res));
+            SSRC = np.conj(np.matmul(res.conj().T, res));
             #SSRC = conj(res'*res);
             res = obj.Y-YP;
             print("MATMUL")
@@ -338,6 +370,6 @@ class TRME(RegressionEstimator):
             print("UGH")
             print("UGH")
             #obj.R2(obj.R2 < 0) = 0;
-    #return self.b
+        return self.b
             
             

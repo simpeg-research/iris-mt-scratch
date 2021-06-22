@@ -14,7 +14,8 @@ class IterControl(object):
 
     """
 
-    def __init__(self, max_number_of_iterations=10, **kwargs):
+    def __init__(self, max_number_of_iterations=10,
+                 max_number_of_redescending_iterations=1, **kwargs):
         """
 
         Parameters
@@ -22,6 +23,13 @@ class IterControl(object):
         max_number_of_iterations: int
             Set to zero for OLS, otherwise, this is how many times the RME
             will refine the estimate.
+        max_number_of_redescending_iterations : int
+            1 or 2 at most.  If set to zero we ignore the redescend code block
+        tolerance : float
+            minimum fractional change in any term in b.  Any smaller change
+            than this will trigger convergence
+        epsilon : float
+            NOT USED: REMOVE
         kwargs
         """
         print("TEST")
@@ -34,16 +42,13 @@ class IterControl(object):
         self.max_number_of_iterations = max_number_of_iterations
         self.tolerance = 0.005
         self.epsilon = 1000
+        self.max_number_of_redescending_iterations = 2  # 1,2 at most is fine
 
         #<regression-M estimator params>
-        #separate block/class, etc.
         self.r0 = 1.5   #infinty for OLS
-        #L2 norm between 0 and 1.5 stderr
-        #L1 norm above r0 (large residuals)
-        self.redescend = False
-        self.number_of_redescending_iterations = 0
-        self.max_number_of_redescending_iterations = 1 #2 at most is fine
-        self.u0 = 2.8 #what is it?
+        self.u0 = 2.8  # what is it?
+        self._number_of_redescending_iterations = 0
+        self.max_number_of_redescending_iterations = 2 #1,2 at most is fine
         # u0 is a parameter for the redescending
         #some double exponential formula and u0 controlls it
         # it makes for severe downweigthing about u0
@@ -62,18 +67,12 @@ class IterControl(object):
 
     def converged(self, b, b0):
         """
-        TODO: add some feedback to user, i.e. if convergence achieved then tell
-        us why: max_number_of_iterations reached or  max_change less than or
-        eqaul to tolerance
-
-        I think Gary was returning this:
-        notConverged = (maxChng > ITER.tolerance) & ...
-        (ITER.niter < ITER.iterMax);
-
         Parameters
         ----------
-        b
-        b0
+        b : complex-valued numpy array
+            the most recent regression estimate
+        b0 : complex-valued numpy array
+            The previous regression estimate
 
         Returns
         -------
@@ -84,7 +83,6 @@ class IterControl(object):
         """
 
         converged = False
-        b *= 1.0 #float
         maximum_change = np.max(np.abs(1 - b/b0))
         tolerance_cond = maximum_change <= self.tolerance
         iteration_cond = self.number_of_iterations >= self.max_number_of_iterations
@@ -99,21 +97,17 @@ class IterControl(object):
                       f" {self.max_number_of_iterations}")
         else:
             converged = False
-        #cond1 = maximum_change > self.tolerance
-        #cond2 = self.number_of_iterations < self.max_number_of_iterations
-
-        #if cond1 & cond2:
-        #    converged = False
-        #else:
-        #    converged = True
-
 
         return converged
 
-
-    def redescend_maxxed_out(self):
-        pass
-        #   if self.number_of_redescending_iterations >
+    @property
+    def continue_redescending(self):
+        maxxed_out = self._number_of_redescending_iterations <=  \
+               self.max_number_of_redescending_iterations
+        if maxxed_out:
+            return False
+        else:
+            return True
 
 
     @property
