@@ -21,6 +21,10 @@ iris_mt_scratch/egbert_codes-20210121T193218Z-001/egbert_codes/matlabPrototype_1
 initialization:
 obj = TRME(X=X, Y=Y, iter_control=iter)
 
+TODO: set Q, R to be variables asssociated with this class (actually put Q,
+R inside RegressionEstimator())
+TODO: Move TRME to RME-Regression-Estimator
+
 THe QR-decomposition is employed on the matrix of independent variables.
 X = Q R where Q is unitary/orthogonal and R upper triangular.
 Since X is [n_data x n_channels_in] Q is [n_data x n_data].  Wikipedia has a
@@ -28,6 +32,16 @@ nice description of the QR factorization:
 https://en.wikipedia.org/wiki/QR_decomposition
 On a high level, the point of the QR decomposition is to transform the data
 into a domain where the inversion is done with a triangular matrix.
+
+Note that we employ here the "economical" form of the QR decompostion,
+so that Q is not square, and not in fact unitary.
+
+Really Q = [Q1 | Q2] where Q1 has as many columns as there are input variables
+and Q2 is a matrix of zeros.  In this case QQH is the projection matrix,
+or hat matrix equivalent to X(XHX)^-1XH.
+
+The use of QHY is not so much physically meaningful as it is a trick to
+compute more efficiently QQHY.  ? Really are we doing fewer calculations?
 
 
 
@@ -108,20 +122,23 @@ class TRME(RegressionEstimator):
     def u0(self):
         return self.iter_control.u0
 
-    @property
-    def n_data(self):
-        """
-        TODO: This method is superceeding the n_data method of the base class
-        REview if this is appropriate.
-        See Also Issue#7 in aurora github
-        Returns
-        -------
-
-        """
-        return self.Y.shape[0]
+    #<DEPRECATED>
+    # @property
+    # def n_data(self):
+    #     """
+    #     TODO: This method is superceeding the n_data method of the base class
+    #     REview if this is appropriate.
+    #     See Also Issue#7 in aurora github
+    #     Returns
+    #     -------
+    #
+    #     """
+    #     return self.Y.shape[0]
+    # </DEPRECATED>
 
     @property
     def correction_factor(self):
+        #MOVE THIS METHOD INTO AN RME-Specific CONFIG
         return self.iter_control.correction_factor
 
 

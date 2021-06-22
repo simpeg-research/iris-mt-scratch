@@ -42,13 +42,12 @@ class IterControl(object):
         self.max_number_of_iterations = max_number_of_iterations
         self.tolerance = 0.005
         self.epsilon = 1000
+        self._number_of_redescending_iterations = 0
         self.max_number_of_redescending_iterations = 2  # 1,2 at most is fine
 
         #<regression-M estimator params>
         self.r0 = 1.5   #infinty for OLS
         self.u0 = 2.8  # what is it?
-        self._number_of_redescending_iterations = 0
-        self.max_number_of_redescending_iterations = 2 #1,2 at most is fine
         # u0 is a parameter for the redescending
         #some double exponential formula and u0 controlls it
         # it makes for severe downweigthing about u0
@@ -113,6 +112,8 @@ class IterControl(object):
     @property
     def correction_factor(self):
         """
+        TODO: This is an RME specific property.  Suggest move r0, u0 and this method
+        into an RME-config class.
         TODO: Note that IterControl itself should probably be factored.
         A base class can be responsible for iteration_watcher and convergence checks
         etc.  But u0, and r0 are specific to the Robust methods.

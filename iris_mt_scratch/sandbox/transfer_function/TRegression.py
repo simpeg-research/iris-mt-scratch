@@ -192,6 +192,12 @@ class RegressionEstimator(object):
 
     @property
     def n_data(self):
+        """
+        or return self.Y.shape[0], any reason to choose one or the other?
+        Returns
+        -------
+
+        """
         return self.X.shape[0]
 
     #REPLACE WITH n_channels_in
