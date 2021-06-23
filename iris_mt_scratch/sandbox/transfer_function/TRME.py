@@ -122,20 +122,6 @@ class TRME(RegressionEstimator):
     def u0(self):
         return self.iter_control.u0
 
-    #<DEPRECATED>
-    # @property
-    # def n_data(self):
-    #     """
-    #     TODO: This method is superceeding the n_data method of the base class
-    #     REview if this is appropriate.
-    #     See Also Issue#7 in aurora github
-    #     Returns
-    #     -------
-    #
-    #     """
-    #     return self.Y.shape[0]
-    # </DEPRECATED>
-
     @property
     def correction_factor(self):
         #MOVE THIS METHOD INTO AN RME-Specific CONFIG
@@ -260,6 +246,9 @@ class TRME(RegressionEstimator):
                 raise Exception
         return Q, R
 
+    def update_predicted_data(self):
+        pass
+
     def redescend(self, Y_predicted, sigma, ):
         """
         % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -321,7 +310,8 @@ class TRME(RegressionEstimator):
             converged = True
             self.expectation_psi_prime = np.ones(self.n_channels_out) #let
             # this be defualt
-            YP = np.matmul(Q, QHY);#not sure we need this?
+            YP = np.matmul(Q, QHY);#not sure we need this?  only in the case
+            # that we want the covariance and do no huber and no redescend
             self.b = b0;
             self.Yc = self.Y;
 

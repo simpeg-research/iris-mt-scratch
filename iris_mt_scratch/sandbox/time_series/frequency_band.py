@@ -190,37 +190,51 @@ class FrequencyBands(object):
     def from_emtf_band_setup(self, filepath, decimation_level, sampling_rate,
                              num_samples_window):
         """
-        Not sure if its more robust to take sampling rate or a frequencies
-        list here.  Frequencies list will already exist normally, but the DC
-        term may have been dropped ... I think sampling rate is better.
+        This converts between EMTF band_setup files to a frequency_bands object.
+        The band_setup file is represented as a dataframe with
+        columns for decimation_level, first_fc_index,
+        last_fc_index.
+
+        Notes:
+        1. In EMTF, the the DC terms were not carried in the FC Files so the
+        integer-index 1 mapped to the first harmonic.  In aurora, the DC-term is
+        kept (for now) and thus, because the fortran arrays index from 1, and
+        python from 0, we don't need any modification to the Fourier coefficient
+        indices here.If we wind up dropping the DC term from the STFT arrays we
+        would need to add -1 to the upper and lower bound indices.
+        2. EMTF band-setup files do not contain information about frequency.
+        Frequecny was implicit in the processing scheme but not stated.  This
+        leaves some ambuguity when reading in files with names like
+        "bs_256.txt".  Does 256 refer to the number of taps in the STFT
+        window, or to the number of positive frequencies (and the window was
+        512-length).  Personal communication with Egbert 2021-06-22 indicates
+        that normally the integer number in a band-setup file name associates with
+        the time-domain window length.
+
+
         Parameters
         ----------
-        filepath
-        decimation_level
-        sample_rate
+        filepath : str or pathlib.Path()
+            The full path to the band_setup file
+        decimation_level : integer
+            Corresponds to the decimation level from the band setup file to
+            create FrequecyBands from.
+        sample_rate : float
+            The sampling rate of the data at decimation_level
 
         Returns
         -------
 
         """
-
-        print("CHECK THIS FOR OFF-BY-ONE-ERRORS - "
-              "assume index 1=DC, 2=df for now")
         emtf_band_setup = EMTFBandSetupFile(filepath=filepath)
         emtf_band_df = emtf_band_setup.get_decimation_level(decimation_level)
         df = sampling_rate / (num_samples_window)
         half_df = df / 2.0
 
-        lower_edges = (emtf_band_df.lower_bound_index-1)*df - half_df
-        upper_edges = (emtf_band_df.upper_bound_index - 1) * df + half_df
+        lower_edges = (emtf_band_df.lower_bound_index * df) - half_df
+        upper_edges = (emtf_band_df.upper_bound_index * df) + half_df
         band_edges = np.vstack((lower_edges.values, upper_edges.values)).T
         self.band_edges = band_edges
 
-        # for i_row, row in emtf_band_df.iterrows():
-        #     f_lower_bound = df*(row["lower_bound_index"]-1) - half_df
-        #     f_upper_bound = df*(row["upper_bound_index"]-1) + half_df
-        #     band = FrequencyBand(lower_bound=f_lower_bound, upper_bound=f_upper_bound)
-        #     #self.bands[i_row] = band
-        #     self.bands[band.center_frequency] = band
         return
 

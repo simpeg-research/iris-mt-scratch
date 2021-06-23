@@ -83,6 +83,7 @@ class IterControl(object):
 
         converged = False
         maximum_change = np.max(np.abs(1 - b/b0))
+        #maximum_change = np.max(1 - np.abs(b / b0))
         tolerance_cond = maximum_change <= self.tolerance
         iteration_cond = self.number_of_iterations >= self.max_number_of_iterations
         if tolerance_cond or iteration_cond:

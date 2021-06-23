@@ -40,10 +40,15 @@ class RegressionEstimator(object):
 
     Attributes
     ----------
-    X : xarray.Dataset or xarray.DataArray ... still trying to decide
+    _X : xarray.Dataset or xarray.DataArray ... still trying to decide
         numpy array (normally 2-dimensional)
         These are the independent variables.  In the matlab codes each
         observation was a row and each parameter (channel) is a column
+    X :  numpy array (normally 2-dimensional)
+        This is a "pure array" representation of _X used to emulate Gary
+        Egbert's matlab codes. It may or may not be deprecated.
+    _Y : xarray.Dataset or xarray.DataArray
+        These are the dependent variables.
     Y : numpy array (normally 2-dimensional)
         These are the dependent variables.  In the matlab codes each
         observation was a row and each parameter (channel) is a column
@@ -91,6 +96,10 @@ class RegressionEstimator(object):
         self.check_number_of_observations_xy_consistent()
         self.R2 = None
 
+        self._Q = None
+        self._R = None
+        self._QH = None #conjugate transpose of Q (Hermitian operator)
+
     def cast_data_to_2d_for_regression(self, XY):
         """
         When the data are "harvested" from frequency bands they have a
@@ -134,6 +143,66 @@ class RegressionEstimator(object):
     
 
 
+    def check_number_of_observations_xy_consistent(self):
+        if self.Y.shape[0] != self.X.shape[0]:
+            print(f"X has {self.X.shape[0]} rows but Y has {self.Y.shape[0]}")
+            raise Exception
+
+    @property
+    def n_data(self):
+        """
+        or return self.Y.shape[0], any reason to choose one or the other?
+        See Also Issue#7 in aurora github: Masked arrays stuff will go here
+        Returns
+        -------
+
+        """
+        return self.X.shape[0]
+
+    #REPLACE WITH n_channels_in
+    @property
+    def n_param(self):
+        return self.X.shape[1]
+
+    @property
+    def n_channels_out(self):
+        """ number of dependent variables"""
+        return self.Y.shape[1]
+
+    @property
+    def is_overdetermined(self):
+        return self.n_param > self.n_data
+
+    # ADD NAN MANAGEMENT HERE
+
+
+    # <MAY SUPERCLASS REGRESSION ESTIMATOR LEAVING THIS AN ABSTRACT BASE CLASS>
+    def qr_decomposition(self, X, sanity_check=False):
+        Q, R = np.linalg.qr(X)
+        self._Q = Q
+        self._R = R
+        if sanity_check:
+            if np.isclose(np.matmul(Q, R) - self.X, 0).all():
+                pass
+            else:
+                print("Failed QR decompostion sanity check")
+                raise Exception
+        return# Q, R
+
+    @property
+    def Q(self):
+        return self._Q
+
+    @property
+    def R(self):
+        return self._R
+
+    @property
+    def QH(self):
+        if self._QH is None:
+            self._QH = Q.conj().T
+        return self._QH
+
     def estimate_ols(self, mode="solve"):
         """
 
@@ -157,16 +226,16 @@ class RegressionEstimator(object):
         -------
 
         """
-        X = self.X
-        Y = self.Y
         if mode.lower()=="qr":
             from scipy.linalg import solve_triangular
-            Q, R = np.linalg.qr(X, mode='economic')
-            b = solve_triangular(R, np.conj(Q.T) @ Y)
+            self.qr_decomposition(self.X)
+            b = solve_triangular(self.R, self.QH @ self.Y)
         else:
+            X = self.X
+            Y = self.Y
             XH = np.conj(X.T)
-            XHX = np.matmul(XH, X)
-            XHY = np.matmul(XH, Y)
+            XHX = XH @ X
+            XHY = XH @ Y
             if mode.lower()=="brute_force":
                 XHX_inv = np.linalg.inv(XHX)
                 b = np.matmul(XHX_inv, XHY)
@@ -182,37 +251,9 @@ class RegressionEstimator(object):
     def estimate(self):
         print("this method is not defined for the abstract base class")
         print("But we put OLS in here for dev")
-        Z = self.estimate_ols()
+        Z = self.estimate_ols(mode="qr")
         return Z
+    # </MAY SUPERCLASS REGRESSION ESTIMATOR LEAVING THIS AN ABSTRACT BASE CLASS>
 
-    def check_number_of_observations_xy_consistent(self):
-        if self.Y.shape[0] != self.X.shape[0]:
-            print(f"X has {self.X.shape[0]} rows but Y has {self.Y.shape[0]}")
-            raise Exception
 
-    @property
-    def n_data(self):
-        """
-        or return self.Y.shape[0], any reason to choose one or the other?
-        Returns
-        -------
-
-        """
-        return self.X.shape[0]
-
-    #REPLACE WITH n_channels_in
-    @property
-    def n_param(self):
-        return self.X.shape[1]
-
-    @property
-    def n_channels_out(self):
-        """ number of dependent variables"""
-        return self.Y.shape[1]
-
-    @property
-    def is_overdetermined(self):
-        return self.n_param > self.n_data
-    
-    #ADD NAN MANAGEMENT HERE
 
