@@ -33,4 +33,9 @@ def save_complex(data_array, *args, **kwargs):
 def read_complex(*args, **kwargs):
     ds = xr.open_dataset(*args, **kwargs)
     return ds['real'] + ds['imag'] * 1j
+
+#Usage:
+#band_da is an xarray
+#save_complex(band_da, TEST_BAND_FILE)
+#band_da = read_complex(TEST_BAND_FILE)
 # </NETCDF DOESN'T HANDLE COMPLEX>
